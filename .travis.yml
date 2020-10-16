@@ -1,0 +1,7 @@
+language: python
+
+services:
+  - docker
+
+before_install:
+- docker build -t jnidzwetzki/mysql-ha-cloud:debian10 -f Dockerfile-mysql .
