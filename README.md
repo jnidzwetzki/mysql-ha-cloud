@@ -1,4 +1,4 @@
-# MySQL highly-available cloud container
+# MySQL highly-available cloud container orchestrator
 <a href="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud">
   <img alt="Build Status" src="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud.svg?branch=main">
 </a>
