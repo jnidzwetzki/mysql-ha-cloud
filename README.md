@@ -1,4 +1,7 @@
 # MySQL highly-available cloud container
+
+[![Join the chat at https://gitter.im/mysql-ha-cloud/Lobby](https://badges.gitter.im/mysql-ha-cloud/Lobby.svg)](https://gitter.im/mysql-ha-cloud/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 <a href="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud">
   <img alt="Build Status" src="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud.svg?branch=main">
 </a>
