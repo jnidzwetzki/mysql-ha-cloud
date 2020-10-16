@@ -1,7 +1,8 @@
 # MySQL highly-available cloud container
-<a href="https://travis-ci.org/jnidzwetzki/bboxdb">
+<a href="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud">
   <img alt="Build Status" src="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud.svg?branch=master">
-
+</a>
+<br>
 This project provides containers and blueprints for robust, scalable, and highly-available MySQL installations. 
 
 Project state: Alpha version in development
