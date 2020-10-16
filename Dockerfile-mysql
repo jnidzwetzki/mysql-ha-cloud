@@ -17,7 +17,7 @@ RUN \
     # \
     # Install system basics \
     # \
-    apt-get install -y unzip curl wget gnupg2 lsb-release && \
+    apt-get install -y unzip curl wget gnupg2 lsb-release procps && \
     # \
     # Install percona XtraBackup \
     # \
@@ -35,7 +35,5 @@ RUN \
     # \
     # Install mysql cluster manager \
     # \
-    apt-get install -y python3.7 python3.7-dev python3-venv python3.7-venv && \
-    python3.7 -m venv venv && \
-    source venv/bin/activate && \
-    pip install -r cluster_manager/requirements.txt 
+    apt-get install -y python3.7 python3.7-dev python3-pip && \
+    pip3 install -r cluster_manager/requirements.txt 
