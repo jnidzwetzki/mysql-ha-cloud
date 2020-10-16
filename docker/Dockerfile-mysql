@@ -1,0 +1,14 @@
+#
+# Build with:
+#
+# docker build -t jnidzwetzki/mysql-ha-cloud:stable - < Dockerfile-mysql
+#
+#################
+
+
+FROM mysql:8.0.21 
+
+RUN \
+    apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y python3.7 python3.7-dev python3-venv python3.7-venv unzip curl 
