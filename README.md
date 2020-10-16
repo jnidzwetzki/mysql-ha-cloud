@@ -1,6 +1,6 @@
 # MySQL highly-available cloud container
 <a href="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud">
-  <img alt="Build Status" src="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud.svg?branch=master">
+  <img alt="Build Status" src="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud.svg?branch=main">
 </a>
 <br>
 This project provides containers and blueprints for robust, scalable, and highly-available MySQL installations. 
