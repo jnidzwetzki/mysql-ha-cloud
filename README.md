@@ -2,6 +2,13 @@
 <a href="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud">
   <img alt="Build Status" src="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud.svg?branch=main">
 </a>
+<a href="http://makeapullrequest.com">
+ <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" />
+</a>
+
+<a href="https://gitter.im/mysql-ha-cloud/Lobby?utm_source=share-link&utm_medium=link&utm_campaign=share-link">
+  <img alt="Join the chat at https://gitter.im/mysql-ha-cloud/Lobby" src="https://badges.gitter.im/Join%20Chat.svg">
+</a>
 <br>
 This project provides containers and blueprints for robust, scalable, and highly-available MySQL installations. 
 
