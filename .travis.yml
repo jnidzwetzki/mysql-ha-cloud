@@ -5,11 +5,18 @@ python:
 services:
   - docker
 
-install:
-  - pip install -r mysql_cluster_manager/requirements.txt
-  - cd mysql_cluster_manager
-  - pylint src
-  - cd ..
-  - docker build -t jnidzwetzki/mysql-ha-cloud:debian10 -f Dockerfile-mysql .
+jobs:
+  include:
+     - 
+        script: pip install -r mysql_cluster_manager/requirements.txt
+     - 
+        script: cd mysql_cluster_manager && pylint src
+     - 
+        stage: "Build docker"
+        script: build -t jnidzwetzki/mysql-ha-cloud:debian10 -f Dockerfile-mysql .
+     - 
+        stage: "Deploy docker"
+        on: 
+	   branch: main
+	script: echo Deploy to Docker
 
-script: true
