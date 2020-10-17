@@ -22,5 +22,3 @@ jobs:
                - echo "$DOCKER_PASSWORD" | docker login -u jnidzwetzki --password-stdin
                - docker push jnidzwetzki/mysql-ha-cloud:latest
         if: branch = main
-
-s
