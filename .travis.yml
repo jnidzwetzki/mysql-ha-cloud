@@ -8,17 +8,19 @@ services:
 jobs:
   include:
      - 
-        stage: "Install requirements"
-        script: pip install -r mysql_cluster_manager/requirements.txt
-     - 
-        stage: "Linter"
-        script: cd mysql_cluster_manager && pylint src
+        stage: "Install requirements and lint"
+        script: 
+           - pip install -r mysql_cluster_manager/requirements.txt
+           - cd mysql_cluster_manager && pylint src
      - 
         stage: "Build docker"
-        script: build -t jnidzwetzki/mysql-ha-cloud:debian10 -f Dockerfile-mysql .
+        script: docker build -t jnidzwetzki/mysql-ha-cloud:debian10 -f Dockerfile-mysql .
      - 
         stage: "Deploy docker"
-        on:
-            branch: main
-            script: echo Deploy to Docker
+        script: 
+               - docker build -t jnidzwetzki/mysql-ha-cloud:debian10 -f Dockerfile-mysql .
+               - echo "$DOCKER_PASSWORD" | docker login -u jnidzwetzki --password-stdin
+               - docker push jnidzwetzki/mysql-ha-cloud:latest
+        if: branch = main
+
 

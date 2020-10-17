@@ -1,7 +1,7 @@
 #
 # Build with:
 #
-# docker build -t jnidzwetzki/mysql-ha-cloud:stable -f Dockerfile-mysql .
+# docker build -t jnidzwetzki/mysql-ha-cloud:latest -f Dockerfile-mysql .
 #
 #################
 
