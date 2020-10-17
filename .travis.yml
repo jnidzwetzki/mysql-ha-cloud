@@ -9,7 +9,8 @@ jobs:
   include:
      - 
         stage: "Install requirements and lint"
-        script: 
+        script:
+           - echo "$DOCKER_PASSWORD" | docker login -u jnidzwetzki --password-stdin
            - pip install -r mysql_cluster_manager/requirements.txt
            - cd mysql_cluster_manager && pylint src
      - 
