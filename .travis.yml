@@ -16,7 +16,7 @@ jobs:
         script: build -t jnidzwetzki/mysql-ha-cloud:debian10 -f Dockerfile-mysql .
      - 
         stage: "Deploy docker"
-        on: 
-	   branch: main
-	script: echo Deploy to Docker
+        on:
+            branch: main
+            script: echo Deploy to Docker
 
