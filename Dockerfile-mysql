@@ -8,8 +8,11 @@
 FROM mysql:8.0.21
 
 SHELL ["/bin/bash", "-c"]
-WORKDIR /mycm
-COPY ./cluster_manager cluster_manager
+WORKDIR /cluster
+
+COPY ./mysql_cluster_manager/src .
+COPY ./mysql_cluster_manager/requirements.txt .
+COPY ./entry-point.sh .
 
 RUN \
     apt-get update && \
@@ -36,4 +39,6 @@ RUN \
     # Install mysql cluster manager \
     # \
     apt-get install -y python3.7 python3.7-dev python3-pip && \
-    pip3 install -r cluster_manager/requirements.txt 
+    pip3 install -r requirements.txt 
+
+CMD ["bash", "entry-point.sh"]
