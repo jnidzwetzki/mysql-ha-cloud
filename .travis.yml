@@ -8,8 +8,10 @@ services:
 jobs:
   include:
      - 
+        stage: "Install requirements"
         script: pip install -r mysql_cluster_manager/requirements.txt
      - 
+        stage: "Linter"
         script: cd mysql_cluster_manager && pylint src
      - 
         stage: "Build docker"
