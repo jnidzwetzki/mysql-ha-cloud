@@ -12,6 +12,8 @@
 <br>
 This project provides containers and blueprints for robust, scalable, and highly-available MySQL installations. 
 <br>
+<br>
+
 
 **Project state:** Alpha version in development
 
