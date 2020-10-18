@@ -35,6 +35,60 @@ Of course, there are other projects that also focus on highly available MySQL sy
 * [Signal 18 replication manager](https://signal18.io/products/srm)
 * [Autopilot pattern for MySQL](https://github.com/autopilotpattern/mysql)
 
-## What is the USP of this project?
+## What is the main focus of this project?
 
-This project will provide robust, tested, and easily to deploy containers for self-hosted MySQL cloud installations. The goal is that everybody can deploy highly-available and scalable MySQL installations and eliminate the DBMS as a single point of failure in his architecture.
+This project will provide robust, tested, and easy to deploy containers for self-hosted MySQL cloud installations. The goal is that everybody can deploy highly-available and scalable MySQL installations and eliminate the DBMS as a single point of failure in his architecture.
+
+## Example - Using Docker Swarm
+
+In this example, a three-node cluster is used. The three nodes (192.168.178.110, 192.168.178.111, and 192.168.178.112) are running Debian 10. 
+
+### Step 1 - Setup Docker
+
+Setup your [Docker Swarm](https://docs.docker.com/engine/swarm/). The following commands have to be executed on all nodes of the cluster. 
+
+```bash
+apt-get update
+apt-get install -y apt-transport-https ca-certificates curl gnupg2 software-properties-common sudo
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io
+```
+
+### Step 2 - Init the Docker Swarm
+
+On one of the nodes, execute the following commands to bootstrap the Docker Swarm:
+
+```bash
+docker swarm init --advertise-addr <Public-IP of this node>
+```
+
+The command above will show how you can add further _worker nodes_ to the cluster. Worker nodes only execute docker container and do __not__ be part of the cluster management. The node that has inited the cluster will be the only _manager node_ in the cluster. If this node becomes unavailable, the cluster runs into an unhealthy state. Therefore, you should at least have three _manager nodes_ in your cluster. 
+
+To join a new node as _manager node_, execute the following command on a master node and execute the provided command on the new node:
+
+```bash
+docker swarm join-token manager
+```
+The output of the command above should be executed on the worker nodes to join the cluster as managers.
+
+```bash
+docker swarm join --token <Token>
+```
+
+After executing these commands, the status of the cluster should look as follows:
+
+```bash
+$ docker node ls
+ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
+cqshak7jcuh97oqtznbcorkjp *   debian10-vm1        Ready               Active              Leader              19.03.13
+deihndvm1vwbym9q9x3fyksev     debian10-vm2        Ready               Active              Reachable           19.03.13
+0tx9kd4ldjod3i6y733lte2d2     debian10-vm3        Ready               Active              Reachable           19.03.13
+```
+
+__Note__: Per default, manager nodes also execute Docker containers. This can lead to the situation that a manager node becomes unreliable if a heavy workload is processed; the node is detected as dead, and the workload becomes re-scheduled even if all nodes of the cluster are available. To avoid such situations, in a real-world setup, manager nodes should only interact as manager nodes and not execute any workload. This can be done by executing `docker node update --availability drain <NODE>` for the manager nodes. 
+
+### Step 3 - Deploy Consul and our MySQL Container
+
+
