@@ -41,7 +41,9 @@ This project will provide robust, tested, and easy to deploy containers for self
 
 ## Example - Using Docker Swarm
 
-In this example, a three-node cluster is used. The three nodes (192.168.178.110, 192.168.178.111, and 192.168.178.112) are running Debian 10. 
+In this example, a cluster consisting of four nodes is used. The nodes (192.168.178.110, 192.168.178.111, 192.168.178.112, 192.168.178.113) are running Debian 10. One primary MySQL server (read/write) and two read-only MySQL servers are deployed on these nodes. One Docker node is used as a standby node. 
+
+When one of the three active Docker nodes fails, the failed Docker container is re-started on the standby node. If the primary MySQL was failing, one of the read-only MySQL servers is promoted to the new primary MySQL server, and a new read-only Server is started. If one of the read-only Servers fails, a new read-only Server is started, provisioned, and configured as a read-only system for the primary MySQL server. 
 
 ### Step 1 - Setup Docker
 
@@ -84,7 +86,8 @@ $ docker node ls
 ID                            HOSTNAME            STATUS              AVAILABILITY        MANAGER STATUS      ENGINE VERSION
 cqshak7jcuh97oqtznbcorkjp *   debian10-vm1        Ready               Active              Leader              19.03.13
 deihndvm1vwbym9q9x3fyksev     debian10-vm2        Ready               Active              Reachable           19.03.13
-0tx9kd4ldjod3i6y733lte2d2     debian10-vm3        Ready               Active              Reachable           19.03.13
+3rqp1te4d66tm56b7a1zzlpr2     debian10-vm3        Ready               Active              Reachable           19.03.13
+7l21f6mdy0dytmiy4oh70ttjo     debian10-vm4        Ready               Active              Reachable           19.03.13
 ```
 
 __Note__: Per default, manager nodes also execute Docker containers. This can lead to the situation that a manager node becomes unreliable if a heavy workload is processed; the node is detected as dead, and the workload becomes re-scheduled even if all nodes of the cluster are available. To avoid such situations, in a real-world setup, manager nodes should only interact as manager nodes and not execute any workload. This can be done by executing `docker node update --availability drain <NODE>` for the manager nodes. 
