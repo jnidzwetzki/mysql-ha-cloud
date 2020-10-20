@@ -41,9 +41,9 @@ This project will provide robust, tested, and easy to deploy containers for self
 
 ## Example - Using Docker Swarm
 
-In this example, a cluster consisting of four nodes is used. The nodes (192.168.178.110, 192.168.178.111, 192.168.178.112, 192.168.178.113) are running Debian 10. One primary MySQL server (read/write) and two read-only MySQL servers are deployed on these nodes. One Docker node is used as a standby node. 
+In this example, a cluster consisting of four nodes is used. The nodes (192.168.178.110, 192.168.178.111, 192.168.178.112, 192.168.178.113) are running Debian 10. One primary MySQL server (read/write) and two read-only MySQL replicias are deployed on these nodes. One Docker node is used as a standby node. 
 
-When one of the three active Docker nodes fails, the failed Docker container is re-started on the standby node. If the primary MySQL was failing, one of the read-only MySQL servers is promoted to the new primary MySQL server, and a new read-only Server is started. If one of the read-only Servers fails, a new read-only Server is started, provisioned, and configured as a read-only system for the primary MySQL server. 
+When one of the three active Docker nodes fails, the failed Docker container is re-started on the standby node. If the primary MySQL was failing, one of the replicias MySQL servers is promoted to the new primary MySQL server, and a new replicia Server is started. If one of the replicias MySQL servers fails, a new replicia MySQL server is started, provisioned, and configured.
 
 ### Step 1 - Setup Docker
 
