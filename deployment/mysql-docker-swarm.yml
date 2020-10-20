@@ -1,0 +1,42 @@
+version: "3.8"
+
+networks:
+  backend:
+
+services:
+  consul:
+    image: consul:1.8
+    networks:
+       backend:
+          aliases:
+             - backend.network
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    command: agent -ui -data-dir /consul/data -server -client 0.0.0.0 -retry-join backend.network -bootstrap-expect=3 
+    deploy:
+      replicas: 3
+      endpoint_mode: dnsrr
+      placement:
+        max_replicas_per_node: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  mysql:
+    image: jnidzwetzki/mysql-ha-cloud:latest
+    networks:
+       backend:
+    environment:
+      - CONSUL_BOOTSTRAP_SERVER=backend.network
+    deploy:
+      replicas: 3
+      placement:
+        max_replicas_per_node: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
