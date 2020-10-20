@@ -41,9 +41,15 @@ This project will provide robust, tested, and easy to deploy containers for self
 
 ## Example - Using Docker Swarm
 
-In this example, a cluster consisting of four nodes is used. The nodes (192.168.178.110, 192.168.178.111, 192.168.178.112, 192.168.178.113) are running Debian 10. One primary MySQL server (read/write) and two read-only MySQL replicias are deployed. In addition, Consul is also deployed as a service. All deployed services are running three replicias. Therefore, one Docker node can fail and the services can still be executed.
+In this example, a cluster consisting of four nodes running Debian 10 is used. The following services are deployed on the cluster:
 
-When one of the three active Docker nodes fails, the failed Docker container is re-started on the standby node. If the primary MySQL was failing, one of the replicias MySQL servers is promoted to the new primary MySQL server, and a new replicia Server is started. If one of the replicias MySQL servers fails, a new replicia MySQL server is started, provisioned, and configured.
+* Three Consul instances, they are used for election of the primary MySQL server, for service discovery, and for providing additional information about the state of the cluster.
+* Three instances (replicated) of the minio object storage to store MySQL backups. These backups are used to bootstrap new MySQL replicas automatically. 
+* One primary MySQL server (read/write) and two read-only MySQL replicas. 
+
+All deployed services are running three replicas. Therefore, one Docker node can fail and the services can still be executed.
+
+When one Docker node fails, the aborted Docker containers are re-started on the remaining nodes. If the primary MySQL fails, one of the replicas MySQL servers is promoted to the new primary MySQL server, and a new replica Server is started. If one of the replicas MySQL servers fails, a new replica MySQL server is started, provisioned, and configured.
 
 ### Step 1 - Setup Docker
 
