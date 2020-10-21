@@ -98,6 +98,13 @@ deihndvm1vwbym9q9x3fyksev     debian10-vm2        Ready               Active    
 
 __Note__: Per default, manager nodes also execute Docker containers. This can lead to the situation that a manager node becomes unreliable if a heavy workload is processed; the node is detected as dead, and the workload becomes re-scheduled even if all nodes of the cluster are available. To avoid such situations, in a real-world setup, manager nodes should only interact as manager nodes and not execute any workload. This can be done by executing `docker node update --availability drain <NODE>` for the manager nodes. 
 
-### Step 3 - Deploy Consul and our MySQL Container
+### Step 3 - Deploy the Services
+
+The Deployment of the services to Docker Swarm is done with a [Compose file](https://github.com/jnidzwetzki/mysql-ha-cloud/tree/main/deployment). This file descibes the services of the Docker Swarm cluster. The file can be downloaded and deployed as follows:
+
+```bash
+wget https://raw.githubusercontent.com/jnidzwetzki/mysql-ha-cloud/main/deployment/mysql-docker-swarm.yml
+docker stack deploy --compose-file mysql-docker-swarm.yml mysql
+```
 
 
