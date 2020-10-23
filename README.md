@@ -47,7 +47,7 @@ In this example, a cluster consisting of four nodes running Debian 10 is used. T
 * Three instances (replicated) of the minio object storage to store MySQL backups. These backups are used to bootstrap new MySQL replicas automatically. 
 * One primary MySQL server (read/write) and two read-only MySQL replicas. 
 
-All deployed services are running three replicas. Therefore, one Docker node can fail and the services can still be executed.
+All deployed services are running three replicas. The four nodes should be running in different availability zones. Therefore, one Docker node or availability zones can fail, and the MySQL service is still available. 
 
 When one Docker node fails, the aborted Docker containers are re-started on the remaining nodes. If the primary MySQL fails, one of the replicas MySQL servers is promoted to the new primary MySQL server, and a new replica Server is started. If one of the replicas MySQL servers fails, a new replica MySQL server is started, provisioned, and configured.
 
