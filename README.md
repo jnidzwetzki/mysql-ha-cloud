@@ -44,10 +44,10 @@ This project will provide robust, tested, and easy to deploy containers for self
 In this example, a cluster consisting of four nodes running Debian 10 is used. The following services are deployed on the cluster:
 
 * Three Consul instances, they are used for election of the primary MySQL server, for service discovery, and for providing additional information about the state of the cluster.
-* Three instances (replicated) of the minio object storage to store MySQL backups. These backups are used to bootstrap new MySQL replicas automatically. 
+* One of the MinIO object storage to store MySQL backups. These backups are used to bootstrap new MySQL replicas automatically. MinIO needs at least to provide four nodes / volumes to provide highly available. In addition, deploying such a setup without labeling the Docker nodes and creating stateful volumes is hard. The data on the S§ Bucket are re-written periodically. Therefore, we don't deploy a highly available and replicated version of MinIO in this example.
 * One primary MySQL server (read/write) and two read-only MySQL replicas. 
 
-All deployed services are running three replicas. The four nodes should be running in different availability zones. Therefore, one Docker node or availability zones can fail, and the MySQL service is still available. 
+The four Docker nodes should be running in different availability zones. Therefore, one Docker node or availability zones can fail, and the MySQL service is still available. 
 
 When one Docker node fails, the aborted Docker containers are re-started on the remaining nodes. If the primary MySQL fails, one of the replicas MySQL servers is promoted to the new primary MySQL server, and a new replica Server is started. If one of the replicas MySQL servers fails, a new replica MySQL server is started, provisioned, and configured.
 
@@ -107,4 +107,22 @@ wget https://raw.githubusercontent.com/jnidzwetzki/mysql-ha-cloud/main/deploymen
 docker stack deploy --compose-file mysql-docker-swarm.yml mysql
 ```
 
+After the deployment is done, the stack should look as follows:
 
+```
+$ docker stack ps mysql
+ID                  NAME                IMAGE                                      NODE                DESIRED STATE       CURRENT STATE          ERROR               PORTS
+u76l3tdmaari        mysql_minio.1       minio/minio:RELEASE.2020-10-18T21-54-12Z   debian10-vm1        Running             Running 12 hours ago                       
+0l9tfos9a1x3        mysql_mysql.1       jnidzwetzki/mysql-ha-cloud:latest          debian10-vm1        Running             Running 12 hours ago                       
+yv90rhchf8zo        mysql_consul.1      consul:1.8                                 debian10-vm2        Running             Running 12 hours ago                       
+8ih671k5quuy        mysql_mysql.2       jnidzwetzki/mysql-ha-cloud:latest          debian10-vm4        Running             Running 12 hours ago                       
+q13orlp3rwf0        mysql_consul.2      consul:1.8                                 debian10-vm3        Running             Running 12 hours ago                       
+n120oem9bpge        mysql_mysql.3       jnidzwetzki/mysql-ha-cloud:latest          debian10-vm3        Running             Running 12 hours ago                       
+mg2xf7pfz5nr        mysql_consul.3      consul:1.8                                 debian10-vm4        Running             Running 12 hours ago   
+
+$ docker stack services mysql
+ID                  NAME                MODE                REPLICAS               IMAGE                                      PORTS
+2tf6zdffzv4r        mysql_mysql         replicated          3/3 (max 1 per node)   jnidzwetzki/mysql-ha-cloud:latest          
+qsqge2j4vhkc        mysql_minio         replicated          1/1                    minio/minio:RELEASE.2020-10-18T21-54-12Z   *:9000->9000/tcp
+yap05yt8wkqs        mysql_consul        replicated          3/3 (max 1 per node)   consul:1.8     
+```
