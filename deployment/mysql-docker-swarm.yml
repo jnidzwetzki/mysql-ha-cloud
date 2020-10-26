@@ -9,10 +9,10 @@ services:
     networks:
        backend:
           aliases:
-             - backend.network
+             - consul_cluster
     environment:
       - CONSUL_BIND_INTERFACE=eth0
-    command: agent -ui -data-dir /consul/data -server -client 0.0.0.0 -retry-join backend.network -bootstrap-expect=3 
+    command: agent -ui -data-dir /consul/data -server -client 0.0.0.0 -retry-join consul_cluster -bootstrap-expect=3 
     deploy:
       replicas: 3
       endpoint_mode: dnsrr
@@ -29,14 +29,31 @@ services:
     networks:
        backend:
     environment:
-      - CONSUL_BOOTSTRAP_SERVER=backend.network
+      - CONSUL_BOOTSTRAP_SERVER=consul_cluster
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=minio123
+      - MINIO_URL=http://minio:9000
     deploy:
       replicas: 3
       placement:
         max_replicas_per_node: 1
       update_config:
         parallelism: 1
-        delay: 10s
+        delay: 60s
       restart_policy:
         condition: on-failure
 
+  minio:
+    image: minio/minio:RELEASE.2020-10-18T21-54-12Z
+    networks:
+       backend:
+          aliases:
+             - minio_endpoint
+    ports:
+       - 9000:9000
+    environment:
+       - MINIO_ACCESS_KEY=minio
+       - MINIO_SECRET_KEY=minio123
+    command: server /data
+
+ 
