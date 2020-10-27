@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import time
 import argparse
 
@@ -13,6 +14,5 @@ if args.operation == 'join_or_bootstrap':
     while True:
         time.sleep(1)
 else:
-    print(f"Unknown operation: {args.operation}");
-    exit(1)
-
+    print(f"Unknown operation: {args.operation}")
+    sys.exit(1)
