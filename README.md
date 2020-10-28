@@ -126,3 +126,19 @@ ID                  NAME                MODE                REPLICAS            
 qsqge2j4vhkc        mysql_minio         replicated          1/1                    minio/minio:RELEASE.2020-10-18T21-54-12Z   *:9000->9000/tcp
 yap05yt8wkqs        mysql_consul        replicated          3/3 (max 1 per node)   consul:1.8     
 ```
+
+After the service is deployed, the state of the docker installation can be checked. On the Docker node, the following command can be excuted in one of the consul containers `a856acfc1635`:
+
+
+```bash
+$ docker exec -t a856acfc1635 consul members
+Node          Address         Status  Type    Build  Protocol  DC   Segment
+87bed4fff4ce  10.0.6.2:8301   alive   server  1.8.5  2         dc1  <all>
+a856acfc1635  10.0.6.4:8301   alive   server  1.8.5  2         dc1  <all>
+ad114faf9844  10.0.6.3:8301   alive   server  1.8.5  2         dc1  <all>
+0a0085a4bdb8  10.0.6.11:8301  alive   client  1.8.4  2         dc1  <default>
+85212e1545ff  10.0.6.10:8301  alive   client  1.8.4  2         dc1  <default>
+a5f060f2ef02  10.0.6.9:8301   alive   client  1.8.4  2         dc1  <default>
+```
+
+In the output above can be seen that the deployment of the Consul servers was successful. Three servers are deployed, and from the MySQL installations, three agents are started. 
