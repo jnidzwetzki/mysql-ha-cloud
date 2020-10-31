@@ -30,7 +30,8 @@ def start_consul_agent():
         consul_args.append("--join")
         consul_args.append(consul_seed)
 
-    consul_process = subprocess.run(consul_args, capture_output=False, check=True)
+    # Run process in background
+    consul_process=subprocess.Popen(consul_args)
 
     return consul_process
 
@@ -53,9 +54,13 @@ def setup_minio():
 
     subprocess.run(mc_args, capture_output=True, check=True)
 
+def setup_consul_connection():
+    logging.info("Register Consul connection")
+
 def join_or_bootstrap():
     setup_minio()
     start_consul_agent()
+    setup_consul_connection()
 
     logging.info("Starting MySQL")
     while True:
