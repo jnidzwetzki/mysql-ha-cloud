@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+import logging
 import argparse
 import subprocess
 
@@ -10,10 +11,8 @@ parser = argparse.ArgumentParser(description='MySQL cluster manager.')
 
 parser.add_argument('operation', metavar='operation', help='Operation to be executed')
 
-args = parser.parse_args()
-
-if args.operation == 'join_or_bootstrap':
-
+def start_consul_agent():
+    logging.info("Starting Consul Agent")
     consul_args = ["consul"]
     consul_args.append("agent")
     consul_args.append("--data-dir")
@@ -33,8 +32,40 @@ if args.operation == 'join_or_bootstrap':
 
     consul_process = subprocess.run(consul_args, capture_output=False, check=True)
 
+    return consul_process
+
+def setup_minio():
+    logging.info("Setup MinIO agent")
+
+    minio_proto = os.getenv("MINIO_PROTO", "http")
+    minio_server = os.environ.get("MINIO_SERVER")
+    minio_port = os.getenv("MINIO_PORT", 9000)
+    minio_access_key = os.environ.get("MINIO_ACCESS_KEY")
+    minio_secret_key = os.environ.get("MINIO_SECRET_KEY")
+
+    mc_args = ["mc"]
+    mc_args.append["alias"]
+    mc_args.append["set"]
+    mc_args.append["backup"]
+    mc_args.append[f"{minio_proto}://{minio_server}:{minio_port}"]
+    mc_args.append[minio_access_key]
+    mc_args.append[minio_secret_key]
+
+    subprocess.run(mc_args, capture_output=True, check=True)
+
+def join_or_bootstrap():
+    setup_minio()
+    start_consul_agent()
+
+    logging.info("Starting MySQL")
     while True:
         time.sleep(1)
+
+args = parser.parse_args()
+
+if args.operation == 'join_or_bootstrap':
+    join_or_bootstrap()
+
 else:
     print(f"Unknown operation: {args.operation}")
     sys.exit(1)
