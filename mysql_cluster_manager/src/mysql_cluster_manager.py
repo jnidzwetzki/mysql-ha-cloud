@@ -39,17 +39,17 @@ def setup_minio():
 
     minio_proto = os.getenv("MINIO_PROTO", "http")
     minio_server = os.environ.get("MINIO_SERVER")
-    minio_port = os.getenv("MINIO_PORT", 9000)
+    minio_port = os.getenv("MINIO_PORT", "9000")
     minio_access_key = os.environ.get("MINIO_ACCESS_KEY")
     minio_secret_key = os.environ.get("MINIO_SECRET_KEY")
 
     mc_args = ["mc"]
-    mc_args.append["alias"]
-    mc_args.append["set"]
-    mc_args.append["backup"]
-    mc_args.append[f"{minio_proto}://{minio_server}:{minio_port}"]
-    mc_args.append[minio_access_key]
-    mc_args.append[minio_secret_key]
+    mc_args.append("alias")
+    mc_args.append("set")
+    mc_args.append("backup")
+    mc_args.append(f"{minio_proto}://{minio_server}:{minio_port}")
+    mc_args.append(minio_access_key)
+    mc_args.append(minio_secret_key)
 
     subprocess.run(mc_args, capture_output=True, check=True)
 
