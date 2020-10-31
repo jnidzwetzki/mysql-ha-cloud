@@ -31,7 +31,7 @@ def start_consul_agent():
         consul_args.append(consul_seed)
 
     # Run process in background
-    consul_process=subprocess.Popen(consul_args)
+    consul_process = subprocess.Popen(consul_args)
 
     return consul_process
 
