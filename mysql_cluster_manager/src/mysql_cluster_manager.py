@@ -52,12 +52,24 @@ def setup_minio():
 
     subprocess.run(mc_args, capture_output=True, check=True)
 
+def init_mysql_database():
+    logging.info("Init MySQL database directory")
+    if os.path.isfile("/var/lib/mysql/ib_logfile0"):
+        logging.warning("MySQL is already initialized, skipping")
+        return
+
+    subprocess.run(
+        ["su", "mysql", "-c", ["mysqld --initialize-insecure"]],
+        capture_output=True, check=True)
+
+
 def setup_consul_connection():
     logging.info("Register Consul connection")
 
 def join_or_bootstrap():
     setup_minio()
     start_consul_agent()
+    init_mysql_database()
     setup_consul_connection()
 
     logging.info("Starting MySQL")
