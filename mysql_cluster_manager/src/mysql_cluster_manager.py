@@ -59,7 +59,7 @@ def init_mysql_database():
         return
 
     subprocess.run(
-        ["su", "mysql", "-c", ["mysqld --initialize-insecure"]],
+        ["su", "mysql", "-c", "mysqld --initialize-insecure"],
         capture_output=True, check=True)
 
 
