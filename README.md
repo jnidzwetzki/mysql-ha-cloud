@@ -17,7 +17,7 @@ This project provides containers and blueprints for robust, scalable, and highly
 
 **Project state:** Alpha version in development
 
-## What is the problem?
+## Why do I need this?
 
 In today's software development, robust applications are often developed as stateless cloud-native containers. Such containers can be easily moved between hosts, automatically restarted on failures, and replicated to handle increasing workloads. On the other hand, data are stored in relational database systems (RDBMS), which are often running on bare-metal hardware. Relational databases are stateful applications that are hard to scale, and they are often a single point of failure; high availability (HA) is rarely implemented.
 
