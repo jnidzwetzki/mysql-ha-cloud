@@ -58,9 +58,9 @@ def init_mysql_database():
         logging.warning("MySQL is already initialized, skipping")
         return
 
-    subprocess.run(
-        ["su", "mysql", "-c", "mysqld --initialize-insecure"],
-        capture_output=True, check=True)
+    mysql_init = ["su", "mysql", "-c", "mysqld --initialize-insecure"]
+
+    subprocess.run(mysql_init, capture_output=True, check=True)
 
 
 def setup_consul_connection():
