@@ -50,7 +50,7 @@ def setup_minio():
     mc_args.append(minio_access_key)
     mc_args.append(minio_secret_key)
 
-    subprocess.run(mc_args, capture_output=True, check=True)
+    subprocess.run(mc_args, check=True)
 
 def init_mysql_database():
     logging.info("Init MySQL database directory")
@@ -60,7 +60,7 @@ def init_mysql_database():
 
     mysql_init = ["su", "mysql", "-c", "mysqld --initialize-insecure"]
 
-    subprocess.run(mysql_init, capture_output=True, check=True)
+    subprocess.run(mysql_init, check=True)
 
 
 def setup_consul_connection():
