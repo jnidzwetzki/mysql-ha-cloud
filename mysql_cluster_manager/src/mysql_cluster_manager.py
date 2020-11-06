@@ -45,13 +45,7 @@ def setup_minio():
     minio_secret_key = os.environ.get("MINIO_SECRET_KEY")
 
     # Register server
-    mc_args = ["mc"]
-    mc_args.append("alias")
-    mc_args.append("set")
-    mc_args.append("backup")
-    mc_args.append(minio_url)
-    mc_args.append(minio_access_key)
-    mc_args.append(minio_secret_key)
+    mc_args = ["mc", "alias", "set", "backup", minio_url, minio_access_key, minio_secret_key]
     subprocess.run(mc_args, check=True)
 
     # Create bucket
