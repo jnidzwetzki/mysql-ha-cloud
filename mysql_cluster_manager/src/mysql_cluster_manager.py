@@ -7,6 +7,8 @@ import logging
 import argparse
 import subprocess
 
+import mysql.connector
+
 parser = argparse.ArgumentParser(description='MySQL cluster manager.')
 
 parser.add_argument('operation', metavar='operation', help='Operation to be executed')
@@ -42,6 +44,7 @@ def setup_minio():
     minio_access_key = os.environ.get("MINIO_ACCESS_KEY")
     minio_secret_key = os.environ.get("MINIO_SECRET_KEY")
 
+    # Register server
     mc_args = ["mc"]
     mc_args.append("alias")
     mc_args.append("set")
@@ -49,8 +52,12 @@ def setup_minio():
     mc_args.append(minio_url)
     mc_args.append(minio_access_key)
     mc_args.append(minio_secret_key)
-
     subprocess.run(mc_args, check=True)
+
+    # Create bucket
+    mc_create_bucket = ["mc", "mb", "backup/mysqlbackup", "-p"]
+    subprocess.run(mc_create_bucket, check=True)
+
 
 def init_mysql_database():
     logging.info("Init MySQL database directory")
@@ -58,21 +65,49 @@ def init_mysql_database():
         logging.warning("MySQL is already initialized, skipping")
         return
 
-    mysql_init = ["su", "mysql", "-c", "mysqld --initialize-insecure"]
-
+    mysql_init = ["/usr/bin/mysqld", "--initialize-insecure", "--user=mysql"]
     subprocess.run(mysql_init, check=True)
 
 
 def setup_consul_connection():
     logging.info("Register Consul connection")
 
+def run_mysqld():
+    logging.info("Starting MySQL")
+    mysql_server = ["/usr/bin/mysqld_safe", "--user=mysql"]
+    subprocess.run(mysql_server, check=True)
+    wait_for_mysql_connection()
+
+def wait_for_mysql_connection(timeout=30, username='root',
+                              password='None', database='mysql'):
+
+    elapsed_time = 0
+
+    while elapsed_time < timeout:
+        try:
+            cnx = mysql.connector.connect(user=username, password=password,
+                                          database=database)
+            cnx.close()
+            return True
+        except mysql.connector.Error:
+            elapsed_time = elapsed_time + 1
+
+    return False
+
+def backup_mysql():
+    logging.info("Backing up MySQL")
+    # mkdir /cluster/mysql
+    # xtrabackup --backup --target-dir=/cluster/mysql
+    # tar zcvf mysql.tgz mysql
+    # mc cp mysql.tgz backup:/
+
 def join_or_bootstrap():
     setup_minio()
     start_consul_agent()
     init_mysql_database()
     setup_consul_connection()
+    run_mysqld()
 
-    logging.info("Starting MySQL")
     while True:
         time.sleep(1)
 
