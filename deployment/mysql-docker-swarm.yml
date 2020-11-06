@@ -29,10 +29,13 @@ services:
     networks:
        backend:
     environment:
+      - CONSUL_BIND_INTERFACE=eth0
       - CONSUL_BOOTSTRAP_SERVER=consul_cluster
       - MINIO_ACCESS_KEY=minio
       - MINIO_SECRET_KEY=minio123
       - MINIO_URL=http://minio:9000
+      - MYSQL_ROOT_PASSWORD=verysecret123
+
     deploy:
       replicas: 3
       placement:
