@@ -59,7 +59,7 @@ def init_mysql_database():
         logging.warning("MySQL is already initialized, skipping")
         return
 
-    mysql_init = ["/usr/bin/mysqld", "--initialize-insecure", "--user=mysql"]
+    mysql_init = ["/usr/sbin/mysqld", "--initialize-insecure", "--user=mysql"]
     subprocess.run(mysql_init, check=True)
 
 
