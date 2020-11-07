@@ -53,7 +53,7 @@ When one Docker node fails, the aborted Docker containers are re-started on the 
 
 ### Step 1 - Setup Docker
 
-Setup your [Docker Swarm](https://docs.docker.com/engine/swarm/). The following commands have to be executed on all nodes of the cluster. 
+Setup your [Docker Swarm](https://docs.docker.com/engine/swarm/). The following commands have to be executed on all nodes of the cluster. As an alternative, you can use the following [Ansible Playbook](https://github.com/jnidzwetzki/ansible-playbooks/tree/main/docker) to install Docker on the cluster.
 
 ```bash
 apt-get update
