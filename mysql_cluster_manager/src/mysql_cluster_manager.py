@@ -148,6 +148,10 @@ def execute_mysql_statement(sql=None, username='root',
         sys.exit(1)
 
 def mysql_backup():
+    
+    # Call Setup to ensure bucket and policies do exist
+    minio_setup()
+
     current_time = time.time()
     backup_dir = f"/tmp/mysql_backup_{current_time}"
 
