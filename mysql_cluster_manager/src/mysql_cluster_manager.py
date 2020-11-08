@@ -14,8 +14,10 @@ import mysql.connector
 parser = argparse.ArgumentParser(description='MySQL cluster manager.')
 
 parser.add_argument('operation', metavar='operation', help='Operation to be executed')
+log_levels = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
+parser.add_argument('--log-level', default='INFO', choices=log_levels)
 
-def start_consul_agent():
+def consul_agent_start():
     logging.info("Starting Consul Agent")
     consul_args = ["consul"]
     consul_args.append("agent")
@@ -39,7 +41,7 @@ def start_consul_agent():
 
     return consul_process
 
-def setup_minio():
+def minio_setup():
     logging.info("Setup MinIO agent")
 
     minio_url = os.environ.get("MINIO_URL")
@@ -60,27 +62,48 @@ def setup_minio():
     mc_set_policy_bucket = ["mc", "ilm", "set", "--id=expire_rule", "-expiry-days=7", bucket_name]
     subprocess.run(mc_set_policy_bucket, check=True)
 
-def init_mysql_database():
+
+def mysql_init_database():
     logging.info("Init MySQL database directory")
+
     if os.path.isfile("/var/lib/mysql/ib_logfile0"):
-        logging.warning("MySQL is already initialized, skipping")
-        return
+        logging.info("MySQL is already initialized, skipping")
+        return False
 
     mysql_init = ["/usr/sbin/mysqld", "--initialize-insecure", "--user=mysql"]
+
     subprocess.run(mysql_init, check=True)
+
+    mysql_process = mysql_start()
+
+    # Create Backup User
+    logging.debug("Create MySQL user..")
+    execute_mysql_statement("CREATE USER 'bkpuser'@'localhost' IDENTIFIED BY 's3cret'")
+    execute_mysql_statement("GRANT RELOAD, LOCK TABLES, PROCESS, "
+                            "REPLICATION CLIENT ON *.* TO'bkpuser'@'localhost'")
+
+    # Shutdown MySQL server
+    logging.debug("Inital MySQL setup done, shutdown server..")
+    execute_mysql_statement(sql="SHUTDOWN")
+    mysql_process.wait()
+
+    return True
 
 
 def setup_consul_connection():
     logging.info("Register Consul connection")
 
-def run_mysqld():
+def mysql_start():
     logging.info("Starting MySQL")
     mysql_server = ["/usr/bin/mysqld_safe", "--user=mysql"]
-    subprocess.run(mysql_server, check=True)
-    wait_for_mysql_connection()
+    mysql_process = subprocess.Popen(mysql_server)
 
-def wait_for_mysql_connection(timeout=30, username='root',
-                              password='None', database='mysql'):
+    mysql_wait_for_connection()
+
+    return mysql_process
+
+def mysql_wait_for_connection(timeout=30, username='root',
+                              password=None, database='mysql'):
 
     elapsed_time = 0
 
@@ -93,9 +116,26 @@ def wait_for_mysql_connection(timeout=30, username='root',
         except mysql.connector.Error:
             elapsed_time = elapsed_time + 1
 
+    logging.error("Unable to connect to MySQL")
     return False
 
-def backup_mysql():
+def execute_mysql_statement(sql=None, username='root',
+                            password=None, database='mysql'):
+
+    try:
+        cnx = mysql.connector.connect(user=username, password=password,
+                                      database=database)
+        cursor = cnx.cursor()
+
+        cursor.execute(sql)
+
+        cnx.close()
+        return True
+    except mysql.connector.Error as err:
+        logging.error("Failed to execute SQL: %s", err)
+        sys.exit(1)
+
+def mysql_backup():
     current_time = time.time()
     backup_dir = f"/tmp/mysql_backup_{current_time}"
 
@@ -126,23 +166,28 @@ def backup_mysql():
     logging.info("Backup was successfully created")
 
 def join_or_bootstrap():
-    setup_minio()
-    start_consul_agent()
-    init_mysql_database()
+    minio_setup()
+    consul_process = consul_agent_start()
+    mysql_init_database()
     setup_consul_connection()
-    run_mysqld()
+    mysql_process = mysql_start()
 
     while True:
+        consul_process.poll()
+        mysql_process.poll()
         time.sleep(1)
 
 args = parser.parse_args()
 
+logging.basicConfig(level=args.log_level,
+                    format='%(levelname)s %(name)s %(message)s')
+
 if args.operation == 'join_or_bootstrap':
     join_or_bootstrap()
 elif args.operation == 'minio_setup':
-    setup_minio()
+    minio_setup()
 elif args.operation == 'mysql_backup':
-    backup_mysql()
+    mysql_backup()
 else:
     print(f"Unknown operation: {args.operation}")
     sys.exit(1)
