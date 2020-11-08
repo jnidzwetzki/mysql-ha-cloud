@@ -44,7 +44,7 @@ This project will provide robust, tested, and easy to deploy containers for self
 In this example, a cluster consisting of four nodes running Debian 10 is used. The following services are deployed on the cluster:
 
 * Three Consul instances, they are used for election of the primary MySQL server, for service discovery, and for providing additional information about the state of the cluster.
-* One of the MinIO object storage to store MySQL backups. These backups are used to bootstrap new MySQL replicas automatically. MinIO needs at least to provide four nodes / volumes to provide highly available. In addition, deploying such a setup without labeling the Docker nodes and creating stateful volumes is hard. The data on the S§ Bucket are re-written periodically. Therefore, we don't deploy a highly available and replicated version of MinIO in this example.
+* One of the MinIO object storage to store MySQL backups. These backups are used to bootstrap new MySQL replicas automatically. MinIO needs at least to provide four nodes / volumes to provide highly available. In addition, deploying such a setup without labeling the Docker nodes and creating stateful volumes is hard. The data on the S3 Bucket are re-written periodically. Therefore, we don't deploy a highly available and replicated version of MinIO in this example.
 * One primary MySQL server (read/write) and two read-only MySQL replicas. 
 
 The four Docker nodes should be running in different availability zones. Therefore, one Docker node or availability zones can fail, and the MySQL service is still available. 
