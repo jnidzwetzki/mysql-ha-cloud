@@ -77,10 +77,20 @@ def mysql_init_database():
     mysql_process = mysql_start()
 
     # Create Backup User
-    logging.debug("Create MySQL user..")
-    execute_mysql_statement("CREATE USER 'bkpuser'@'localhost' IDENTIFIED BY 's3cret'")
+    logging.debug("Create MySQL user for backups..")
+    backup_user = os.environ.get("MYSQL_BACKUP_USER")
+    backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
+    execute_mysql_statement(f"CREATE USER '{backup_user}'@'localhost' "
+                            f"IDENTIFIED BY '{backup_password}'")
     execute_mysql_statement("GRANT RELOAD, LOCK TABLES, PROCESS, "
-                            "REPLICATION CLIENT ON *.* TO'bkpuser'@'localhost'")
+                            f"REPLICATION CLIENT ON *.* TO '{backup_user}'@'localhost'")
+
+    # Chaging permissions for the root user
+    root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
+    execute_mysql_statement("GRANT ALL ON *.* TO 'root'@'localhost' WITH GRANT OPTION")
+    execute_mysql_statement("GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION")
+    execute_mysql_statement(f"SET PASSWORD FOR 'root'@'localhost' = PASSWORD('${root_password}')")
+    execute_mysql_statement(f"SET PASSWORD FOR 'root'@'%' = PASSWORD('${root_password}')")
 
     # Shutdown MySQL server
     logging.debug("Inital MySQL setup done, shutdown server..")
@@ -148,7 +158,7 @@ def execute_mysql_statement(sql=None, username='root',
         sys.exit(1)
 
 def mysql_backup():
-    
+
     # Call Setup to ensure bucket and policies do exist
     minio_setup()
 
@@ -163,7 +173,12 @@ def mysql_backup():
     os.makedirs(backup_dir)
 
     # Create mysql backup
-    xtrabackup = ["/usr/bin/xtrabackup", "--backup", f"--target-dir={backup_dir}"]
+    backup_user = os.environ.get("MYSQL_BACKUP_USER")
+    backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
+    xtrabackup = ["/usr/bin/xtrabackup", f"--user={backup_user}",
+                  f"--password={backup_password}", "--backup",
+                  f"--target-dir={backup_dir}"]
+
     subprocess.run(xtrabackup, check=True)
 
     # Compress backup
