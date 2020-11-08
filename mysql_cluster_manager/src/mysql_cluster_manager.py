@@ -7,6 +7,8 @@ import logging
 import argparse
 import subprocess
 
+from shutil import rmtree
+
 import mysql.connector
 
 parser = argparse.ArgumentParser(description='MySQL cluster manager.')
@@ -89,11 +91,34 @@ def wait_for_mysql_connection(timeout=30, username='root',
     return False
 
 def backup_mysql():
-    logging.info("Backing up MySQL")
-    # mkdir /cluster/mysql
-    # xtrabackup --backup --target-dir=/cluster/mysql
-    # tar zcvf mysql.tgz mysql
-    # mc cp mysql.tgz backup:/
+    current_time = time.time()
+    backup_dir = f"/tmp/mysql_backup_{current_time}"
+
+    logging.info("Backing up MySQL into dir %s", backup_dir)
+    if os.path.exists(backup_dir):
+        logging.error("Backup path %s already exists, skipping backup run", backup_dir)
+
+    # Crate backup dir
+    os.makedirs(backup_dir)
+
+    # Create mysql backup
+    xtrabackup = ["/usr/bin/xtrabackup", "--backup", f"--target-dir={backup_dir}"]
+    subprocess.run(xtrabackup, check=True)
+
+    # Compress backup
+    backup_file = f"/tmp/mysql_backup_{current_time}.tgz"
+    tar = ["/bin/tar", "zcf", backup_file, backup_dir]
+    subprocess.run(tar, check=True)
+
+    # Upload Backup to S3 Bucket
+    mc_args = ["/usr/local/bin/mc", "cp", backup_file, "backup/mysqlbackup/"]
+    subprocess.run(mc_args, check=True)
+
+    # Remove old backup data
+    rmtree(backup_dir)
+    os.remove(backup_file)
+
+    logging.info("Backup was successfully created")
 
 def join_or_bootstrap():
     setup_minio()
@@ -109,7 +134,8 @@ args = parser.parse_args()
 
 if args.operation == 'join_or_bootstrap':
     join_or_bootstrap()
-
+elif args.operation == 'mysql_backup':
+    backup_mysql()
 else:
     print(f"Unknown operation: {args.operation}")
     sys.exit(1)
