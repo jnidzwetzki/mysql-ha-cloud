@@ -102,21 +102,33 @@ def mysql_start():
 
     return mysql_process
 
+
 def mysql_wait_for_connection(timeout=30, username='root',
                               password=None, database='mysql'):
 
+    """
+        Test connection via unix-socket. During first init
+        MySQL start without network access.
+    """
     elapsed_time = 0
+    last_error = None
 
     while elapsed_time < timeout:
         try:
             cnx = mysql.connector.connect(user=username, password=password,
-                                          database=database)
+                                          database=database,
+                                          unix_socket='/var/run/mysqld/mysqld.sock')
             cnx.close()
+            logging.debug("MySQL connection successfully")
             return True
-        except mysql.connector.Error:
+        except mysql.connector.Error as err:
+            time.sleep(1)
             elapsed_time = elapsed_time + 1
+            last_error = err
 
-    logging.error("Unable to connect to MySQL")
+    logging.error("Unable to connect to MySQL (timeout=%i). %s", elapsed_time, last_error)
+    sys.exit(1)
+
     return False
 
 def execute_mysql_statement(sql=None, username='root',
@@ -124,7 +136,7 @@ def execute_mysql_statement(sql=None, username='root',
 
     try:
         cnx = mysql.connector.connect(user=username, password=password,
-                                      database=database)
+                                      database=database, unix_socket='/var/run/mysqld/mysqld.sock')
         cursor = cnx.cursor()
 
         cursor.execute(sql)
