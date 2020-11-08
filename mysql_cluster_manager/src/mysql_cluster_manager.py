@@ -46,14 +46,19 @@ def setup_minio():
     minio_access_key = os.environ.get("MINIO_ACCESS_KEY")
     minio_secret_key = os.environ.get("MINIO_SECRET_KEY")
 
+    bucket_name = "backup/mysqlbackup"
+
     # Register server
     mc_args = ["mc", "alias", "set", "backup", minio_url, minio_access_key, minio_secret_key]
     subprocess.run(mc_args, check=True)
 
     # Create bucket
-    mc_create_bucket = ["mc", "mb", "backup/mysqlbackup", "-p"]
+    mc_create_bucket = ["mc", "mb", bucket_name, "-p"]
     subprocess.run(mc_create_bucket, check=True)
 
+    # Set expire policy on bucket
+    mc_set_policy_bucket = ["mc", "ilm", "set", "--id=expire_rule", "-expiry-days=7", bucket_name]
+    subprocess.run(mc_set_policy_bucket, check=True)
 
 def init_mysql_database():
     logging.info("Init MySQL database directory")
@@ -134,6 +139,8 @@ args = parser.parse_args()
 
 if args.operation == 'join_or_bootstrap':
     join_or_bootstrap()
+elif args.operation == 'minio_setup':
+    setup_minio()
 elif args.operation == 'mysql_backup':
     backup_mysql()
 else:
