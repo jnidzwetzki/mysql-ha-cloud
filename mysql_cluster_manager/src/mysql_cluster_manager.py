@@ -88,8 +88,8 @@ def mysql_init_database():
     # Start server the first time
     mysql_process = mysql_start(use_root_password=False)
 
-    # Create Backup User
-    logging.debug("Create MySQL user for backups..")
+    # Create backup user
+    logging.debug("Create MySQL user for backups")
     backup_user = os.environ.get("MYSQL_BACKUP_USER")
     backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
     execute_mysql_statement(f"CREATE USER '{backup_user}'@'localhost' "
@@ -99,11 +99,19 @@ def mysql_init_database():
     execute_mysql_statement("GRANT SELECT ON performance_schema.log_status TO "
                             f"'{backup_user}'@'localhost'")
 
-    # Chaging permissions for the root user
+    # Create replication user
+    logging.debug("Create replication user")
+    replication_user = os.environ.get("MYSQL_REPLICATION_USER")
+    replication_password = os.environ.get("MYSQL_REPLICATION_PASSWORD")
+    execute_mysql_statement(f"CREATE USER '{replication_user}'@'%' "
+                            f"IDENTIFIED BY '{replication_password}'")
+    execute_mysql_statement(f"GRANT REPLICATION SLAVE ON *.* TO '{replication_user}'@'%'")
+
+    # Change permissions for the root user
     logging.debug("Set permissions for the root user")
     root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
-    execute_mysql_statement("CREATE USER 'root'@'%' IDENTIFIED BY 'root';")
-    execute_mysql_statement(f"ALTER USER 'root'@'%' IDENTIFIED BY '{root_password}'")
+    execute_mysql_statement(f"CREATE USER 'root'@'%' IDENTIFIED BY '{root_password}'")
+    execute_mysql_statement("GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION")
     execute_mysql_statement(f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{root_password}'")
 
     # Shutdown MySQL server

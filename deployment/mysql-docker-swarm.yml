@@ -37,6 +37,8 @@ services:
       - MYSQL_ROOT_PASSWORD=verysecret123
       - MYSQL_BACKUP_USER=backup_user
       - MYSQL_BACKUP_PASSWORD=backup_secret
+      - MYSQL_REPLICATION_USER=replication_user
+      - MYSQL_REPLICATION_PASSWORD=replication_secret
 
     deploy:
       replicas: 3
