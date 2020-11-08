@@ -18,6 +18,10 @@ log_levels = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
 parser.add_argument('--log-level', default='INFO', choices=log_levels)
 
 def consul_agent_start():
+    """
+    Start the local Consul agent.
+    """
+
     logging.info("Starting Consul Agent")
     consul_args = ["consul"]
     consul_args.append("agent")
@@ -42,6 +46,10 @@ def consul_agent_start():
     return consul_process
 
 def minio_setup():
+    """
+    Setup the MinIO agent.
+    """
+
     logging.info("Setup MinIO agent")
 
     minio_url = os.environ.get("MINIO_URL")
@@ -62,8 +70,11 @@ def minio_setup():
     mc_set_policy_bucket = ["mc", "ilm", "set", "--id=expire_rule", "-expiry-days=7", bucket_name]
     subprocess.run(mc_set_policy_bucket, check=True)
 
-
 def mysql_init_database():
+    """
+    Init a MySQL and configure permissions.
+    """
+
     logging.info("Init MySQL database directory")
 
     if os.path.isfile("/var/lib/mysql/ib_logfile0"):
@@ -102,11 +113,17 @@ def mysql_init_database():
 
     return True
 
-
 def setup_consul_connection():
+    """
+    Init consul connection.
+    """
     logging.info("Register Consul connection")
 
 def mysql_start(use_root_password=True):
+    """
+    Start the MySQL and wait for ready to serve connections.
+    """
+
     logging.info("Starting MySQL")
     mysql_server = ["/usr/bin/mysqld_safe", "--user=mysql"]
     mysql_process = subprocess.Popen(mysql_server)
@@ -120,13 +137,12 @@ def mysql_start(use_root_password=True):
 
     return mysql_process
 
-
 def mysql_wait_for_connection(timeout=30, username='root',
                               password=None, database='mysql'):
 
     """
-        Test connection via unix-socket. During first init
-        MySQL start without network access.
+    Test connection via unix-socket. During first init
+    MySQL start without network access.
     """
     elapsed_time = 0
     last_error = None
@@ -152,6 +168,9 @@ def mysql_wait_for_connection(timeout=30, username='root',
 def execute_mysql_statement(sql=None, username='root',
                             password=None, database='mysql'):
 
+    """
+    Execute the given SQL statement.
+    """
     try:
         cnx = mysql.connector.connect(user=username, password=password,
                                       database=database, unix_socket='/var/run/mysqld/mysqld.sock')
@@ -166,6 +185,10 @@ def execute_mysql_statement(sql=None, username='root',
         sys.exit(1)
 
 def mysql_backup():
+    """
+    Backup the local MySQL Server and upload
+    the backup into a S3 bucket.
+    """
 
     # Call Setup to ensure bucket and policies do exist
     minio_setup()
@@ -205,6 +228,10 @@ def mysql_backup():
     logging.info("Backup was successfully created")
 
 def join_or_bootstrap():
+    """
+    Join the existing cluster or bootstrap a new cluster
+    """
+
     minio_setup()
     consul_process = consul_agent_start()
     mysql_init_database()
