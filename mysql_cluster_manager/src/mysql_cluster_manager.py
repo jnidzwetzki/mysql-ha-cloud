@@ -74,7 +74,8 @@ def mysql_init_database():
 
     subprocess.run(mysql_init, check=True)
 
-    mysql_process = mysql_start()
+    # Start server the first time
+    mysql_process = mysql_start(use_root_password=False)
 
     # Create Backup User
     logging.debug("Create MySQL user for backups..")
@@ -82,19 +83,21 @@ def mysql_init_database():
     backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
     execute_mysql_statement(f"CREATE USER '{backup_user}'@'localhost' "
                             f"IDENTIFIED BY '{backup_password}'")
-    execute_mysql_statement("GRANT RELOAD, LOCK TABLES, PROCESS, "
+    execute_mysql_statement("GRANT BACKUP_ADMIN, PROCESS, RELOAD, LOCK TABLES, "
                             f"REPLICATION CLIENT ON *.* TO '{backup_user}'@'localhost'")
+    execute_mysql_statement("GRANT SELECT ON performance_schema.log_status TO "
+                            f"'{backup_user}'@'localhost'")
 
     # Chaging permissions for the root user
+    logging.debug("Set permissions for the root user")
     root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
-    execute_mysql_statement("GRANT ALL ON *.* TO 'root'@'localhost' WITH GRANT OPTION")
-    execute_mysql_statement("GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION")
-    execute_mysql_statement(f"SET PASSWORD FOR 'root'@'localhost' = PASSWORD('${root_password}')")
-    execute_mysql_statement(f"SET PASSWORD FOR 'root'@'%' = PASSWORD('${root_password}')")
+    execute_mysql_statement("CREATE USER 'root'@'%' IDENTIFIED BY 'root';")
+    execute_mysql_statement(f"ALTER USER 'root'@'%' IDENTIFIED BY '{root_password}'")
+    execute_mysql_statement(f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{root_password}'")
 
     # Shutdown MySQL server
     logging.debug("Inital MySQL setup done, shutdown server..")
-    execute_mysql_statement(sql="SHUTDOWN")
+    execute_mysql_statement(sql="SHUTDOWN", username="root", password=root_password)
     mysql_process.wait()
 
     return True
@@ -103,12 +106,17 @@ def mysql_init_database():
 def setup_consul_connection():
     logging.info("Register Consul connection")
 
-def mysql_start():
+def mysql_start(use_root_password=True):
     logging.info("Starting MySQL")
     mysql_server = ["/usr/bin/mysqld_safe", "--user=mysql"]
     mysql_process = subprocess.Popen(mysql_server)
 
-    mysql_wait_for_connection()
+    # Use root password for the connection or not
+    root_password = None
+    if use_root_password:
+        root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
+
+    mysql_wait_for_connection(password=root_password)
 
     return mysql_process
 
