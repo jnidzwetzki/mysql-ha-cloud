@@ -221,9 +221,9 @@ def mysql_backup():
     subprocess.run(xtrabackup, check=True)
 
     # Prepare backup
-    xtrabackup_prepare = ["/usr/bin/xtrabackup", "--prepare", 
+    xtrabackup_prepare = ["/usr/bin/xtrabackup", "--prepare",
                           f"--target-dir={backup_dir}"]
-    
+
     subprocess.run(xtrabackup_prepare, check=True)
 
     # Compress backup
