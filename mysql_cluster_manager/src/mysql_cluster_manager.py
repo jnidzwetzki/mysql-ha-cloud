@@ -89,7 +89,7 @@ def mysql_init_database():
     mysql_process = mysql_start(use_root_password=False)
 
     # Create backup user
-    logging.debug("Create MySQL user for backups")
+    logging.debug("Creating MySQL user for backups")
     backup_user = os.environ.get("MYSQL_BACKUP_USER")
     backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
     execute_mysql_statement(f"CREATE USER '{backup_user}'@'localhost' "
@@ -100,7 +100,7 @@ def mysql_init_database():
                             f"'{backup_user}'@'localhost'")
 
     # Create replication user
-    logging.debug("Create replication user")
+    logging.debug("Creating replication user")
     replication_user = os.environ.get("MYSQL_REPLICATION_USER")
     replication_password = os.environ.get("MYSQL_REPLICATION_PASSWORD")
     execute_mysql_statement(f"CREATE USER '{replication_user}'@'%' "
@@ -219,6 +219,12 @@ def mysql_backup():
                   f"--target-dir={backup_dir}"]
 
     subprocess.run(xtrabackup, check=True)
+
+    # Prepare backup
+    xtrabackup_prepare = ["/usr/bin/xtrabackup", "--prepare", 
+                          f"--target-dir={backup_dir}"]
+    
+    subprocess.run(xtrabackup_prepare, check=True)
 
     # Compress backup
     backup_file = f"/tmp/mysql_backup_{current_time}.tgz"
