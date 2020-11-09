@@ -16,7 +16,7 @@ COPY ./entry-point.sh .
 
 RUN \
     apt-get update && \
-    apt-get upgrade -y && \
+    # apt-get upgrade -y && \
     # \
     # Install system basics \
     # \

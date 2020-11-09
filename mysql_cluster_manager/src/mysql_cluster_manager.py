@@ -145,7 +145,7 @@ def mysql_start(use_root_password=True):
 
     return mysql_process
 
-def mysql_wait_for_connection(timeout=30, username='root',
+def mysql_wait_for_connection(timeout=120, username='root',
                               password=None, database='mysql'):
 
     """
