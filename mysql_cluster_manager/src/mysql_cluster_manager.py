@@ -201,12 +201,15 @@ def mysql_backup():
     # Call Setup to ensure bucket and policies do exist
     minio_setup()
 
+    # Backup directory
     current_time = time.time()
     backup_dir = f"/tmp/mysql_backup_{current_time}"
+    backup_folder_name = "mysql"
+    backup_dest = f"{backup_dir}/{backup_folder_name}"
 
-    logging.info("Backing up MySQL into dir %s", backup_dir)
+    logging.info("Backing up MySQL into dir %s", backup_dest)
     if os.path.exists(backup_dir):
-        logging.error("Backup path %s already exists, skipping backup run", backup_dir)
+        logging.error("Backup path %s already exists, skipping backup run", backup_dest)
 
     # Crate backup dir
     os.makedirs(backup_dir)
@@ -216,19 +219,19 @@ def mysql_backup():
     backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
     xtrabackup = ["/usr/bin/xtrabackup", f"--user={backup_user}",
                   f"--password={backup_password}", "--backup",
-                  f"--target-dir={backup_dir}"]
+                  f"--target-dir={backup_dest}"]
 
     subprocess.run(xtrabackup, check=True)
 
     # Prepare backup
     xtrabackup_prepare = ["/usr/bin/xtrabackup", "--prepare",
-                          f"--target-dir={backup_dir}"]
+                          f"--target-dir={backup_dest}"]
 
     subprocess.run(xtrabackup_prepare, check=True)
 
-    # Compress backup
+    # Compress backup (structure in tar mysql/*)
     backup_file = f"/tmp/mysql_backup_{current_time}.tgz"
-    tar = ["/bin/tar", "zcf", backup_file, backup_dir]
+    tar = ["/bin/tar", "zcf", backup_file, "-C", backup_dir, backup_folder_name]
     subprocess.run(tar, check=True)
 
     # Upload Backup to S3 Bucket
@@ -240,6 +243,70 @@ def mysql_backup():
     os.remove(backup_file)
 
     logging.info("Backup was successfully created")
+
+def minio_get_latest_backup_file():
+    """
+    Get the latest backup filename from the bucket
+    """
+    # Call Setup to ensure bucket and connection do exist
+    minio_setup()
+
+    logging.debug("Searching for latest MySQL Backup")
+    mc_search = ["/usr/local/bin/mc", "find", "backup/mysqlbackup/", "--name",
+                 "mysql*.tgz", "-print", "{time} # {base}"]
+
+    # mc find backup/mysqlbackup/ --name "mysql*.tgz" -print '{time} # {base}'
+    # 2020-11-08 08:42:12 UTC - mysql_backup_1604824911.437146.tgz
+    # 2020-11-08 08:50:53 UTC - mysql_backup_1604825437.6691067.tgz
+    # 2020-11-08 08:55:03 UTC - mysql_backup_1604825684.9835322.tgz
+
+    process = subprocess.run(mc_search, check=True, capture_output=True)
+    files = process.stdout.splitlines()
+
+    if not files:
+        logging.debug("S3 Bucket is empty")
+        return None
+
+    # Take the newest file
+    newest_file = files[-1]
+    changedate, filename = newest_file.decode().split("#")
+
+    # Remove empty chars after split
+    changedate = changedate.strip()
+    filename = filename.strip()
+
+    logging.debug("Newest backup file '%s', date '%s'", filename, changedate)
+
+    return filename
+
+def mysql_restore():
+    """
+    Restore the latest MySQL dump from the S3 Bucket
+    """
+    logging.info("Restore MySQL Backup")
+
+    backup_file = minio_get_latest_backup_file()
+
+    if backup_file is None:
+        logging.error("Unable to restore backup, no backup found in bucket")
+        return False
+
+    # Restore directory
+    current_time = time.time()
+    restore_dir = f"/tmp/mysql_restore_{current_time}"
+
+    mc_download = ["/usr/local/bin/mc", "cp", f"backup/mysqlbackup/{backup_file}", restore_dir]
+    subprocess.run(mc_download, check=True)
+
+    # Shutdown MySQL
+    # rm -r /var/lib/mysql/*
+    # xtrabackup --copy-back --target-dir=/tmp/tmp/mysql_backup_1605027555.6030998/
+    # chown mysql.mysql -R /var/lib/mysql/
+    # Start MySQL
+
+    # Remove old backup data
+    rmtree(restore_dir)
+    return True
 
 def join_or_bootstrap():
     """
@@ -268,6 +335,8 @@ elif args.operation == 'minio_setup':
     minio_setup()
 elif args.operation == 'mysql_backup':
     mysql_backup()
+elif args.operation == 'mysql_restore':
+    mysql_restore()
 else:
     print(f"Unknown operation: {args.operation}")
     sys.exit(1)
