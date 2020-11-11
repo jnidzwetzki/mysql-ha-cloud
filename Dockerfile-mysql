@@ -16,14 +16,14 @@ COPY ./entry-point.sh .
 
 RUN \
     # \
+    # Pin MySQL to 8.0.21 due to: https://jira.percona.com/browse/PXB-2315 \
+    # \
+    apt-mark hold mysql-common mysql-community-client mysql-community-client-core mysql-community-server-core && \
+    # \
     # Run System Upgrade \
     # \
     apt-get update && \
     apt-get upgrade -y && \
-    # \
-    # Pin MySQL to 8.0.21 due to: https://jira.percona.com/browse/PXB-2315 \
-    # \
-    apt-mark hold mysql-common mysql-community-client mysql-community-client-core mysql-community-server-core \
     # \
     # Install system basics \
     # \
