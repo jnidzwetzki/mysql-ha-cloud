@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 
-import os
 import sys
 import time
 import logging
 import argparse
-import subprocess
 
-from shutil import rmtree
-
-import mysql.connector
+from mcm.consul import Consul
+from mcm.minio import Minio
+from mcm.mysql import Mysql
 
 parser = argparse.ArgumentParser(description='MySQL cluster manager.')
 
@@ -17,307 +15,16 @@ parser.add_argument('operation', metavar='operation', help='Operation to be exec
 log_levels = ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
 parser.add_argument('--log-level', default='INFO', choices=log_levels)
 
-def consul_agent_start():
-    """
-    Start the local Consul agent.
-    """
-
-    logging.info("Starting Consul Agent")
-    consul_args = ["consul"]
-    consul_args.append("agent")
-    consul_args.append("--data-dir")
-    consul_args.append("/tmp/consul")
-
-    consul_interface = os.environ.get("CONSUL_BIND_INTERFACE")
-
-    if consul_interface is not None:
-        consul_args.append("--bind")
-        consul_args.append(f'{{{{ GetInterfaceIP "{consul_interface}" }}}}')
-
-    consul_seed = os.environ.get("CONSUL_BOOTSTRAP_SERVER")
-
-    if consul_seed is not None:
-        consul_args.append("--join")
-        consul_args.append(consul_seed)
-
-    # Run process in background
-    consul_process = subprocess.Popen(consul_args)
-
-    return consul_process
-
-def minio_setup():
-    """
-    Setup the MinIO agent.
-    """
-
-    logging.info("Setup MinIO agent")
-
-    minio_url = os.environ.get("MINIO_URL")
-    minio_access_key = os.environ.get("MINIO_ACCESS_KEY")
-    minio_secret_key = os.environ.get("MINIO_SECRET_KEY")
-
-    bucket_name = "backup/mysqlbackup"
-
-    # Register server
-    mc_args = ["mc", "alias", "set", "backup", minio_url, minio_access_key, minio_secret_key]
-    subprocess.run(mc_args, check=True)
-
-    # Create bucket
-    mc_create_bucket = ["mc", "mb", bucket_name, "-p"]
-    subprocess.run(mc_create_bucket, check=True)
-
-    # Set expire policy on bucket
-    mc_set_policy_bucket = ["mc", "ilm", "set", "--id=expire_rule", "-expiry-days=7", bucket_name]
-    subprocess.run(mc_set_policy_bucket, check=True)
-
-def mysql_init_database():
-    """
-    Init a MySQL and configure permissions.
-    """
-
-    logging.info("Init MySQL database directory")
-
-    if os.path.isfile("/var/lib/mysql/ib_logfile0"):
-        logging.info("MySQL is already initialized, skipping")
-        return False
-
-    mysql_init = ["/usr/sbin/mysqld", "--initialize-insecure", "--user=mysql"]
-
-    subprocess.run(mysql_init, check=True)
-
-    # Start server the first time
-    mysql_process = mysql_start(use_root_password=False)
-
-    # Create backup user
-    logging.debug("Creating MySQL user for backups")
-    backup_user = os.environ.get("MYSQL_BACKUP_USER")
-    backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
-    execute_mysql_statement(f"CREATE USER '{backup_user}'@'localhost' "
-                            f"IDENTIFIED BY '{backup_password}'")
-    execute_mysql_statement("GRANT BACKUP_ADMIN, PROCESS, RELOAD, LOCK TABLES, "
-                            f"REPLICATION CLIENT ON *.* TO '{backup_user}'@'localhost'")
-    execute_mysql_statement("GRANT SELECT ON performance_schema.log_status TO "
-                            f"'{backup_user}'@'localhost'")
-
-    # Create replication user
-    logging.debug("Creating replication user")
-    replication_user = os.environ.get("MYSQL_REPLICATION_USER")
-    replication_password = os.environ.get("MYSQL_REPLICATION_PASSWORD")
-    execute_mysql_statement(f"CREATE USER '{replication_user}'@'%' "
-                            f"IDENTIFIED BY '{replication_password}'")
-    execute_mysql_statement(f"GRANT REPLICATION SLAVE ON *.* TO '{replication_user}'@'%'")
-
-    # Change permissions for the root user
-    logging.debug("Set permissions for the root user")
-    root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
-    execute_mysql_statement(f"CREATE USER 'root'@'%' IDENTIFIED BY '{root_password}'")
-    execute_mysql_statement("GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION")
-    execute_mysql_statement(f"ALTER USER 'root'@'localhost' IDENTIFIED BY '{root_password}'")
-
-    # Shutdown MySQL server
-    logging.debug("Inital MySQL setup done, shutdown server..")
-    execute_mysql_statement(sql="SHUTDOWN", username="root", password=root_password)
-    mysql_process.wait()
-
-    return True
-
-def setup_consul_connection():
-    """
-    Init consul connection.
-    """
-    logging.info("Register Consul connection")
-
-def mysql_start(use_root_password=True):
-    """
-    Start the MySQL and wait for ready to serve connections.
-    """
-
-    logging.info("Starting MySQL")
-    mysql_server = ["/usr/bin/mysqld_safe", "--user=mysql"]
-    mysql_process = subprocess.Popen(mysql_server)
-
-    # Use root password for the connection or not
-    root_password = None
-    if use_root_password:
-        root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
-
-    mysql_wait_for_connection(password=root_password)
-
-    return mysql_process
-
-def mysql_wait_for_connection(timeout=120, username='root',
-                              password=None, database='mysql'):
-
-    """
-    Test connection via unix-socket. During first init
-    MySQL start without network access.
-    """
-    elapsed_time = 0
-    last_error = None
-
-    while elapsed_time < timeout:
-        try:
-            cnx = mysql.connector.connect(user=username, password=password,
-                                          database=database,
-                                          unix_socket='/var/run/mysqld/mysqld.sock')
-            cnx.close()
-            logging.debug("MySQL connection successfully")
-            return True
-        except mysql.connector.Error as err:
-            time.sleep(1)
-            elapsed_time = elapsed_time + 1
-            last_error = err
-
-    logging.error("Unable to connect to MySQL (timeout=%i). %s", elapsed_time, last_error)
-    sys.exit(1)
-
-    return False
-
-def execute_mysql_statement(sql=None, username='root',
-                            password=None, database='mysql'):
-
-    """
-    Execute the given SQL statement.
-    """
-    try:
-        cnx = mysql.connector.connect(user=username, password=password,
-                                      database=database, unix_socket='/var/run/mysqld/mysqld.sock')
-        cursor = cnx.cursor()
-
-        cursor.execute(sql)
-
-        cnx.close()
-        return True
-    except mysql.connector.Error as err:
-        logging.error("Failed to execute SQL: %s", err)
-        sys.exit(1)
-
-def mysql_backup():
-    """
-    Backup the local MySQL Server and upload
-    the backup into a S3 bucket.
-    """
-
-    # Call Setup to ensure bucket and policies do exist
-    minio_setup()
-
-    # Backup directory
-    current_time = time.time()
-    backup_dir = f"/tmp/mysql_backup_{current_time}"
-    backup_folder_name = "mysql"
-    backup_dest = f"{backup_dir}/{backup_folder_name}"
-
-    logging.info("Backing up MySQL into dir %s", backup_dest)
-    if os.path.exists(backup_dir):
-        logging.error("Backup path %s already exists, skipping backup run", backup_dest)
-
-    # Crate backup dir
-    os.makedirs(backup_dir)
-
-    # Create mysql backup
-    backup_user = os.environ.get("MYSQL_BACKUP_USER")
-    backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
-    xtrabackup = ["/usr/bin/xtrabackup", f"--user={backup_user}",
-                  f"--password={backup_password}", "--backup",
-                  f"--target-dir={backup_dest}"]
-
-    subprocess.run(xtrabackup, check=True)
-
-    # Prepare backup
-    xtrabackup_prepare = ["/usr/bin/xtrabackup", "--prepare",
-                          f"--target-dir={backup_dest}"]
-
-    subprocess.run(xtrabackup_prepare, check=True)
-
-    # Compress backup (structure in tar mysql/*)
-    backup_file = f"/tmp/mysql_backup_{current_time}.tgz"
-    tar = ["/bin/tar", "zcf", backup_file, "-C", backup_dir, backup_folder_name]
-    subprocess.run(tar, check=True)
-
-    # Upload Backup to S3 Bucket
-    mc_args = ["/usr/local/bin/mc", "cp", backup_file, "backup/mysqlbackup/"]
-    subprocess.run(mc_args, check=True)
-
-    # Remove old backup data
-    rmtree(backup_dir)
-    os.remove(backup_file)
-
-    logging.info("Backup was successfully created")
-
-def minio_get_latest_backup_file():
-    """
-    Get the latest backup filename from the bucket
-    """
-    # Call Setup to ensure bucket and connection do exist
-    minio_setup()
-
-    logging.debug("Searching for latest MySQL Backup")
-    mc_search = ["/usr/local/bin/mc", "find", "backup/mysqlbackup/", "--name",
-                 "mysql*.tgz", "-print", "{time} # {base}"]
-
-    # mc find backup/mysqlbackup/ --name "mysql*.tgz" -print '{time} # {base}'
-    # 2020-11-08 08:42:12 UTC - mysql_backup_1604824911.437146.tgz
-    # 2020-11-08 08:50:53 UTC - mysql_backup_1604825437.6691067.tgz
-    # 2020-11-08 08:55:03 UTC - mysql_backup_1604825684.9835322.tgz
-
-    process = subprocess.run(mc_search, check=True, capture_output=True)
-    files = process.stdout.splitlines()
-
-    if not files:
-        logging.debug("S3 Bucket is empty")
-        return None
-
-    # Take the newest file
-    newest_file = files[-1]
-    changedate, filename = newest_file.decode().split("#")
-
-    # Remove empty chars after split
-    changedate = changedate.strip()
-    filename = filename.strip()
-
-    logging.debug("Newest backup file '%s', date '%s'", filename, changedate)
-
-    return filename
-
-def mysql_restore():
-    """
-    Restore the latest MySQL dump from the S3 Bucket
-    """
-    logging.info("Restore MySQL Backup")
-
-    backup_file = minio_get_latest_backup_file()
-
-    if backup_file is None:
-        logging.error("Unable to restore backup, no backup found in bucket")
-        return False
-
-    # Restore directory
-    current_time = time.time()
-    restore_dir = f"/tmp/mysql_restore_{current_time}"
-
-    mc_download = ["/usr/local/bin/mc", "cp", f"backup/mysqlbackup/{backup_file}", restore_dir]
-    subprocess.run(mc_download, check=True)
-
-    # Shutdown MySQL
-    # rm -r /var/lib/mysql/*
-    # xtrabackup --copy-back --target-dir=/tmp/tmp/mysql_backup_1605027555.6030998/
-    # chown mysql.mysql -R /var/lib/mysql/
-    # Start MySQL
-
-    # Remove old backup data
-    rmtree(restore_dir)
-    return True
-
 def join_or_bootstrap():
     """
     Join the existing cluster or bootstrap a new cluster
     """
 
-    minio_setup()
-    consul_process = consul_agent_start()
-    mysql_init_database()
-    setup_consul_connection()
-    mysql_process = mysql_start()
+    Minio.minio_setup()
+    consul_process = Consul.consul_agent_start()
+    Mysql.mysql_init_database()
+    Consul.consul_setup_connection()
+    mysql_process = Mysql.mysql_start()
 
     while True:
         consul_process.poll()
@@ -332,11 +39,11 @@ logging.basicConfig(level=args.log_level,
 if args.operation == 'join_or_bootstrap':
     join_or_bootstrap()
 elif args.operation == 'minio_setup':
-    minio_setup()
+    Minio.minio_setup()
 elif args.operation == 'mysql_backup':
-    mysql_backup()
+    Mysql.mysql_backup()
 elif args.operation == 'mysql_restore':
-    mysql_restore()
+    Mysql.mysql_restore()
 else:
     print(f"Unknown operation: {args.operation}")
     sys.exit(1)
