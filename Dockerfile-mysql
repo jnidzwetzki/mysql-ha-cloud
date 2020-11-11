@@ -5,7 +5,7 @@
 #
 #################
 
-FROM mysql:8.0.20
+FROM mysql:8.0.21
 
 SHELL ["/bin/bash", "-c"]
 WORKDIR /cluster
@@ -15,8 +15,15 @@ COPY ./mysql_cluster_manager/requirements.txt .
 COPY ./entry-point.sh .
 
 RUN \
+    # \
+    # Run System Upgrade \
+    # \
     apt-get update && \
-    # apt-get upgrade -y && \
+    apt-get upgrade -y && \
+    # \
+    # Pin MySQL to 8.0.21 due to: https://jira.percona.com/browse/PXB-2315 \
+    # \
+    apt-mark hold mysql-common mysql-community-client mysql-community-client-core mysql-community-server-core \
     # \
     # Install system basics \
     # \
