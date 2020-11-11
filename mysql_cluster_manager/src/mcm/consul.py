@@ -1,18 +1,24 @@
+"""This file is part of the MySQL cluster manager"""
+
 import os
 import logging
 import subprocess
 
 class Consul:
 
+    """
+    This class encapsulates all Consul related things
+    """
+
     @staticmethod
-    def consul_setup_connection():
+    def setup_connection():
         """
         Init consul connection.
         """
         logging.info("Register Consul connection")
 
     @staticmethod
-    def consul_agent_start():
+    def agent_start():
         """
         Start the local Consul agent.
         """

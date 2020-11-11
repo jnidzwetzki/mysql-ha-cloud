@@ -62,9 +62,6 @@ confidence=
 # --disable=W".
 disable=
       fixme,
-      missing-module-docstring,
-      missing-class-docstring,
-      missing-function-docstring,
       too-many-return-statements,
       too-many-instance-attributes,
       too-many-locals,

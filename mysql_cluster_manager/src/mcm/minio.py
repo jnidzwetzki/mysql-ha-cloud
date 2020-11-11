@@ -1,11 +1,17 @@
+"""This file is part of the MySQL cluster manager"""
+
 import os
 import logging
 import subprocess
 
 class Minio:
 
+    """
+    This class encapsulates all Minio related things
+    """
+
     @staticmethod
-    def minio_setup():
+    def setup_connection():
         """
         Setup the MinIO agent.
         """
@@ -32,12 +38,12 @@ class Minio:
         subprocess.run(mc_set_policy_bucket, check=True)
 
     @staticmethod
-    def minio_get_latest_backup_file():
+    def get_latest_backup_file():
         """
         Get the latest backup filename from the bucket
         """
         # Call Setup to ensure bucket and connection do exist
-        Minio.minio_setup()
+        Minio.setup_connection()
 
         logging.debug("Searching for latest MySQL Backup")
         mc_search = ["/usr/local/bin/mc", "find", "backup/mysqlbackup/", "--name",

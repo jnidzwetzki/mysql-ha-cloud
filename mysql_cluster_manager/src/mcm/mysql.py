@@ -1,3 +1,5 @@
+"""This file is part of the MySQL cluster manager"""
+
 import os
 import sys
 import time
@@ -12,8 +14,12 @@ from mcm.minio import Minio
 
 class Mysql:
 
+    """
+    This class encapsulates all Mysql related things
+    """
+
     @staticmethod
-    def mysql_init_database():
+    def init_database():
         """
         Init a MySQL and configure permissions.
         """
@@ -29,45 +35,45 @@ class Mysql:
         subprocess.run(mysql_init, check=True)
 
         # Start server the first time
-        mysql_process = Mysql.mysql_start(use_root_password=False)
+        mysql_process = Mysql.server_start(use_root_password=False)
 
         # Create backup user
         logging.debug("Creating MySQL user for backups")
         backup_user = os.environ.get("MYSQL_BACKUP_USER")
         backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
-        Mysql.mysql_execute_statement(f"CREATE USER '{backup_user}'@'localhost' "
-                                      f"IDENTIFIED BY '{backup_password}'")
-        Mysql.mysql_execute_statement("GRANT BACKUP_ADMIN, PROCESS, RELOAD, LOCK TABLES, "
-                                      f"REPLICATION CLIENT ON *.* TO '{backup_user}'@'localhost'")
-        Mysql.mysql_execute_statement("GRANT SELECT ON performance_schema.log_status TO "
-                                      f"'{backup_user}'@'localhost'")
+        Mysql.execute_statement(f"CREATE USER '{backup_user}'@'localhost' "
+                                f"IDENTIFIED BY '{backup_password}'")
+        Mysql.execute_statement("GRANT BACKUP_ADMIN, PROCESS, RELOAD, LOCK TABLES, "
+                                f"REPLICATION CLIENT ON *.* TO '{backup_user}'@'localhost'")
+        Mysql.execute_statement("GRANT SELECT ON performance_schema.log_status TO "
+                                f"'{backup_user}'@'localhost'")
 
         # Create replication user
         logging.debug("Creating replication user")
         replication_user = os.environ.get("MYSQL_REPLICATION_USER")
         replication_password = os.environ.get("MYSQL_REPLICATION_PASSWORD")
-        Mysql.mysql_execute_statement(f"CREATE USER '{replication_user}'@'%' "
-                                      f"IDENTIFIED BY '{replication_password}'")
-        Mysql.mysql_execute_statement(f"GRANT REPLICATION SLAVE ON *.* TO '{replication_user}'@'%'")
+        Mysql.execute_statement(f"CREATE USER '{replication_user}'@'%' "
+                                f"IDENTIFIED BY '{replication_password}'")
+        Mysql.execute_statement(f"GRANT REPLICATION SLAVE ON *.* TO '{replication_user}'@'%'")
 
         # Change permissions for the root user
         logging.debug("Set permissions for the root user")
         root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
-        Mysql.mysql_execute_statement(f"CREATE USER 'root'@'%' IDENTIFIED BY '{root_password}'")
-        Mysql.mysql_execute_statement("GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' "
-                                      "WITH GRANT OPTION")
-        Mysql.mysql_execute_statement("ALTER USER 'root'@'localhost' "
-                                      f"IDENTIFIED BY '{root_password}'")
+        Mysql.execute_statement(f"CREATE USER 'root'@'%' IDENTIFIED BY '{root_password}'")
+        Mysql.execute_statement("GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' "
+                                "WITH GRANT OPTION")
+        Mysql.execute_statement("ALTER USER 'root'@'localhost' "
+                                f"IDENTIFIED BY '{root_password}'")
 
         # Shutdown MySQL server
         logging.debug("Inital MySQL setup done, shutdown server..")
-        Mysql.mysql_execute_statement(sql="SHUTDOWN", username="root", password=root_password)
+        Mysql.execute_statement(sql="SHUTDOWN", username="root", password=root_password)
         mysql_process.wait()
 
         return True
 
     @staticmethod
-    def mysql_start(use_root_password=True):
+    def server_start(use_root_password=True):
         """
         Start the MySQL and wait for ready to serve connections.
         """
@@ -81,13 +87,13 @@ class Mysql:
         if use_root_password:
             root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
 
-        Mysql.mysql_wait_for_connection(password=root_password)
+        Mysql.wait_for_connection(password=root_password)
 
         return mysql_process
 
     @staticmethod
-    def mysql_wait_for_connection(timeout=120, username='root',
-                                  password=None, database='mysql'):
+    def wait_for_connection(timeout=120, username='root',
+                            password=None, database='mysql'):
 
         """
         Test connection via unix-socket. During first init
@@ -116,8 +122,8 @@ class Mysql:
         return False
 
     @staticmethod
-    def mysql_execute_statement(sql=None, username='root',
-                                password=None, database='mysql'):
+    def execute_statement(sql=None, username='root',
+                          password=None, database='mysql'):
 
         """
         Execute the given SQL statement.
@@ -137,14 +143,14 @@ class Mysql:
             sys.exit(1)
 
     @staticmethod
-    def mysql_backup():
+    def backup_data():
         """
         Backup the local MySQL Server and upload
         the backup into a S3 bucket.
         """
 
         # Call Setup to ensure bucket and policies do exist
-        Minio.minio_setup()
+        Minio.setup_connection()
 
         # Backup directory
         current_time = time.time()
@@ -190,13 +196,13 @@ class Mysql:
         logging.info("Backup was successfully created")
 
     @staticmethod
-    def mysql_restore():
+    def restore_data():
         """
         Restore the latest MySQL dump from the S3 Bucket
         """
         logging.info("Restore MySQL Backup")
 
-        backup_file = Minio.minio_get_latest_backup_file()
+        backup_file = Minio.get_latest_backup_file()
 
         if backup_file is None:
             logging.error("Unable to restore backup, no backup found in bucket")

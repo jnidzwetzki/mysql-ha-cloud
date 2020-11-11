@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""This file is part of the MySQL cluster manager"""
+
 import sys
 import time
 import logging
@@ -20,11 +22,11 @@ def join_or_bootstrap():
     Join the existing cluster or bootstrap a new cluster
     """
 
-    Minio.minio_setup()
-    consul_process = Consul.consul_agent_start()
-    Mysql.mysql_init_database()
-    Consul.consul_setup_connection()
-    mysql_process = Mysql.mysql_start()
+    Minio.setup_connection()
+    consul_process = Consul.agent_start()
+    Mysql.init_database()
+    Consul.setup_connection()
+    mysql_process = Mysql.server_start()
 
     while True:
         consul_process.poll()
@@ -39,11 +41,11 @@ logging.basicConfig(level=args.log_level,
 if args.operation == 'join_or_bootstrap':
     join_or_bootstrap()
 elif args.operation == 'minio_setup':
-    Minio.minio_setup()
+    Minio.setup_connection()
 elif args.operation == 'mysql_backup':
-    Mysql.mysql_backup()
+    Mysql.backup_data()
 elif args.operation == 'mysql_restore':
-    Mysql.mysql_restore()
+    Mysql.restore_data()
 else:
     print(f"Unknown operation: {args.operation}")
     sys.exit(1)
