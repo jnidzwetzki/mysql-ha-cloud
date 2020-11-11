@@ -18,6 +18,10 @@ class Mysql:
     This class encapsulates all Mysql related things
     """
 
+    xtrabackup_binary = "/usr/bin/xtrabackup"
+    mysql_server_binary = "/usr/bin/mysqld_safe"
+    mysqld_binary = "/usr/sbin/mysqld"
+
     @staticmethod
     def init_database():
         """
@@ -30,7 +34,7 @@ class Mysql:
             logging.info("MySQL is already initialized, skipping")
             return False
 
-        mysql_init = ["/usr/sbin/mysqld", "--initialize-insecure", "--user=mysql"]
+        mysql_init = [Mysql.mysqld_binary, "--initialize-insecure", "--user=mysql"]
 
         subprocess.run(mysql_init, check=True)
 
@@ -79,7 +83,7 @@ class Mysql:
         """
 
         logging.info("Starting MySQL")
-        mysql_server = ["/usr/bin/mysqld_safe", "--user=mysql"]
+        mysql_server = [Mysql.mysql_server_binary, "--user=mysql"]
         mysql_process = subprocess.Popen(mysql_server)
 
         # Use root password for the connection or not
@@ -168,14 +172,14 @@ class Mysql:
         # Create mysql backup
         backup_user = os.environ.get("MYSQL_BACKUP_USER")
         backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
-        xtrabackup = ["/usr/bin/xtrabackup", f"--user={backup_user}",
+        xtrabackup = [Mysql.xtrabackup_binary, f"--user={backup_user}",
                       f"--password={backup_password}", "--backup",
                       f"--target-dir={backup_dest}"]
 
         subprocess.run(xtrabackup, check=True)
 
         # Prepare backup
-        xtrabackup_prepare = ["/usr/bin/xtrabackup", "--prepare",
+        xtrabackup_prepare = [Mysql.xtrabackup_binary, "--prepare",
                               f"--target-dir={backup_dest}"]
 
         subprocess.run(xtrabackup_prepare, check=True)
@@ -186,7 +190,7 @@ class Mysql:
         subprocess.run(tar, check=True)
 
         # Upload Backup to S3 Bucket
-        mc_args = ["/usr/local/bin/mc", "cp", backup_file, "backup/mysqlbackup/"]
+        mc_args = [Minio.minio_binary, "cp", backup_file, "backup/mysqlbackup/"]
         subprocess.run(mc_args, check=True)
 
         # Remove old backup data
@@ -212,14 +216,17 @@ class Mysql:
         current_time = time.time()
         restore_dir = f"/tmp/mysql_restore_{current_time}"
 
-        mc_download = ["/usr/local/bin/mc", "cp", f"backup/mysqlbackup/{backup_file}", restore_dir]
+        mc_download = [Minio.minio_binary, "cp", f"backup/mysqlbackup/{backup_file}",
+                       restore_dir]
         subprocess.run(mc_download, check=True)
 
         # Shutdown MySQL
         # rm -r /var/lib/mysql/*
         # xtrabackup --copy-back --target-dir=/tmp/tmp/mysql_backup_1605027555.6030998/
         # chown mysql.mysql -R /var/lib/mysql/
+
         # Start MySQL
+        Mysql.server_start()
 
         # Remove old backup data
         rmtree(restore_dir)

@@ -5,10 +5,11 @@ import logging
 import subprocess
 
 class Minio:
-
     """
     This class encapsulates all Minio related things
     """
+
+    minio_binary = "/usr/local/bin/mc"
 
     @staticmethod
     def setup_connection():
@@ -25,15 +26,16 @@ class Minio:
         bucket_name = "backup/mysqlbackup"
 
         # Register server
-        mc_args = ["mc", "alias", "set", "backup", minio_url, minio_access_key, minio_secret_key]
+        mc_args = [Minio.minio_binary, "alias", "set", "backup",
+                   minio_url, minio_access_key, minio_secret_key]
         subprocess.run(mc_args, check=True)
 
         # Create bucket
-        mc_create_bucket = ["mc", "mb", bucket_name, "-p"]
+        mc_create_bucket = [Minio.minio_binary, "mb", bucket_name, "-p"]
         subprocess.run(mc_create_bucket, check=True)
 
         # Set expire policy on bucket
-        mc_set_policy_bucket = ["mc", "ilm", "set", "--id=expire_rule",
+        mc_set_policy_bucket = [Minio.minio_binary, "ilm", "set", "--id=expire_rule",
                                 "-expiry-days=7", bucket_name]
         subprocess.run(mc_set_policy_bucket, check=True)
 
@@ -46,7 +48,7 @@ class Minio:
         Minio.setup_connection()
 
         logging.debug("Searching for latest MySQL Backup")
-        mc_search = ["/usr/local/bin/mc", "find", "backup/mysqlbackup/", "--name",
+        mc_search = [Minio.minio_binary, "find", "backup/mysqlbackup/", "--name",
                      "mysql*.tgz", "-print", "{time} # {base}"]
 
         # mc find backup/mysqlbackup/ --name "mysql*.tgz" -print '{time} # {base}'
