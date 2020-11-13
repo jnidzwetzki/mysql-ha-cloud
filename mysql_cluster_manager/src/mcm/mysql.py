@@ -206,6 +206,10 @@ class Mysql:
         """
         logging.info("Restore MySQL Backup")
 
+        if os.path.isfile("/var/lib/mysql/ib_logfile0"):
+            logging.error("MySQL is already initialized, clean up first")
+            sys.exit(1)
+
         backup_file = Minio.get_latest_backup_file()
 
         if backup_file is None:
@@ -216,18 +220,33 @@ class Mysql:
         current_time = time.time()
         restore_dir = f"/tmp/mysql_restore_{current_time}"
 
+        # Crate restore dir
+        os.makedirs(restore_dir)
+
+        # Download backup
         mc_download = [Minio.minio_binary, "cp", f"backup/mysqlbackup/{backup_file}",
                        restore_dir]
         subprocess.run(mc_download, check=True)
 
-        # Shutdown MySQL
-        # rm -r /var/lib/mysql/*
-        # xtrabackup --copy-back --target-dir=/tmp/tmp/mysql_backup_1605027555.6030998/
-        # chown mysql.mysql -R /var/lib/mysql/
+        # Unpack backup
+        tar = ["/bin/tar", "zxf", f"{restore_dir}/{backup_file}", "-C", restore_dir]
+        subprocess.run(tar, check=True)
 
-        # Start MySQL
-        Mysql.server_start()
+        # Ensure that this is a MySQL Backup
+        if not os.path.isfile(f"{restore_dir}/mysql/ib_logfile0"):
+            logging.error("Unpacked backup is not a MySQL backup")
+            rmtree(restore_dir)
+            return False
 
+        # Restore backup
+        xtrabackup = [Mysql.xtrabackup_binary, "--copy-back",
+                      f"--target-dir={restore_dir}/mysql"]
+        subprocess.run(xtrabackup, check=True)
+        
+        # Change permissions of the restored data
+        chown = ['chown', 'mysql.mysql', '-R', '/var/lib/mysql/']
+        subprocess.run(chown, check=True)
+        
         # Remove old backup data
         rmtree(restore_dir)
         return True
