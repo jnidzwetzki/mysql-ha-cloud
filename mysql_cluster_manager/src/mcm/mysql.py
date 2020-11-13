@@ -242,11 +242,11 @@ class Mysql:
         xtrabackup = [Mysql.xtrabackup_binary, "--copy-back",
                       f"--target-dir={restore_dir}/mysql"]
         subprocess.run(xtrabackup, check=True)
-        
+
         # Change permissions of the restored data
         chown = ['chown', 'mysql.mysql', '-R', '/var/lib/mysql/']
         subprocess.run(chown, check=True)
-        
+
         # Remove old backup data
         rmtree(restore_dir)
         return True
