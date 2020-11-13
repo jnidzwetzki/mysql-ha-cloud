@@ -2,6 +2,7 @@
 
 import os
 import logging
+import datetime
 import subprocess
 
 class Minio:
@@ -52,9 +53,9 @@ class Minio:
                      "mysql*.tgz", "-print", "{time} # {base}"]
 
         # mc find backup/mysqlbackup/ --name "mysql*.tgz" -print '{time} # {base}'
-        # 2020-11-08 08:42:12 UTC - mysql_backup_1604824911.437146.tgz
-        # 2020-11-08 08:50:53 UTC - mysql_backup_1604825437.6691067.tgz
-        # 2020-11-08 08:55:03 UTC - mysql_backup_1604825684.9835322.tgz
+        # 2020-11-08 08:42:12 UTC # mysql_backup_1604824911.437146.tgz
+        # 2020-11-08 08:50:53 UTC # mysql_backup_1604825437.6691067.tgz
+        # 2020-11-08 08:55:03 UTC # mysql_backup_1604825684.9835322.tgz
 
         process = subprocess.run(mc_search, check=True, capture_output=True)
         files = process.stdout.splitlines()
@@ -63,14 +64,24 @@ class Minio:
             logging.debug("S3 Bucket is empty")
             return None
 
+        newest_changedate = -1
+        newest_file = None
+
         # Take the newest file
-        newest_file = files[-1]
-        changedate, filename = newest_file.decode().split("#")
+        for element in files:
+            element_changedate, element_filename = element.decode().split("#")
 
-        # Remove empty chars after split
-        changedate = changedate.strip()
-        filename = filename.strip()
+            # Remove empty chars after split
+            element_changedate = element_changedate.strip()
+            element_filename = element_filename.strip()
 
-        logging.debug("Newest backup file '%s', date '%s'", filename, changedate)
+            time_object = datetime.datetime.strptime(element_changedate, '%Y-%m-%d %H:%M:%S UTC')
+            file_timestamp = time_object.timestamp()
 
-        return filename
+            if file_timestamp > newest_changedate:
+                newest_changedate = file_timestamp
+                newest_file = element_filename
+
+        logging.debug("Newest backup file '%s', date '%s'", newest_file, newest_changedate)
+
+        return newest_file
