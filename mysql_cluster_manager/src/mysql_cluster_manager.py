@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser(
     description="MySQL cluster manager",
     epilog="For more info, please see: https://github.com/jnidzwetzki/mysql-ha-cloud")
 
-AVAILABLE_OPERATIONS = "(join_or_bootstrap, mysql_backup, mysql_restore)"
+AVAILABLE_OPERATIONS = "(join_or_bootstrap, mysql_backup, mysql_restore, mysql_start, mysql_stop)"
 parser.add_argument('operation', metavar='operation',
                     help=f'Operation to be executed {AVAILABLE_OPERATIONS}')
 
@@ -46,6 +46,11 @@ elif args.operation == 'mysql_backup':
     Mysql.backup_data()
 elif args.operation == 'mysql_restore':
     Mysql.restore_data()
+elif args.operation == 'mysql_start':
+    Mysql.server_start()
+elif args.operation == 'mysql_stop':
+    Mysql.server_stop()
+
 else:
     logging.error("Unknown operation: %s", {args.operation})
     sys.exit(1)

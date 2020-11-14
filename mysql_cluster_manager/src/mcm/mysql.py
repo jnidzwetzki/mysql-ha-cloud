@@ -45,33 +45,34 @@ class Mysql:
         logging.debug("Creating MySQL user for backups")
         backup_user = os.environ.get("MYSQL_BACKUP_USER")
         backup_password = os.environ.get("MYSQL_BACKUP_PASSWORD")
-        Mysql.execute_statement(f"CREATE USER '{backup_user}'@'localhost' "
-                                f"IDENTIFIED BY '{backup_password}'")
-        Mysql.execute_statement("GRANT BACKUP_ADMIN, PROCESS, RELOAD, LOCK TABLES, "
-                                f"REPLICATION CLIENT ON *.* TO '{backup_user}'@'localhost'")
-        Mysql.execute_statement("GRANT SELECT ON performance_schema.log_status TO "
-                                f"'{backup_user}'@'localhost'")
+        Mysql.execute_statement_or_exit(f"CREATE USER '{backup_user}'@'localhost' "
+                                        f"IDENTIFIED BY '{backup_password}'")
+        Mysql.execute_statement_or_exit("GRANT BACKUP_ADMIN, PROCESS, RELOAD, LOCK TABLES, "
+                                        f"REPLICATION CLIENT ON *.* TO '{backup_user}'@'localhost'")
+        Mysql.execute_statement_or_exit("GRANT SELECT ON performance_schema.log_status TO "
+                                        f"'{backup_user}'@'localhost'")
 
         # Create replication user
         logging.debug("Creating replication user")
         replication_user = os.environ.get("MYSQL_REPLICATION_USER")
         replication_password = os.environ.get("MYSQL_REPLICATION_PASSWORD")
-        Mysql.execute_statement(f"CREATE USER '{replication_user}'@'%' "
-                                f"IDENTIFIED BY '{replication_password}'")
-        Mysql.execute_statement(f"GRANT REPLICATION SLAVE ON *.* TO '{replication_user}'@'%'")
+        Mysql.execute_statement_or_exit(f"CREATE USER '{replication_user}'@'%' "
+                                        f"IDENTIFIED BY '{replication_password}'")
+        Mysql.execute_statement_or_exit("GRANT REPLICATION SLAVE ON *.* TO "
+                                        f"'{replication_user}'@'%'")
 
         # Change permissions for the root user
         logging.debug("Set permissions for the root user")
         root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
-        Mysql.execute_statement(f"CREATE USER 'root'@'%' IDENTIFIED BY '{root_password}'")
-        Mysql.execute_statement("GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' "
-                                "WITH GRANT OPTION")
-        Mysql.execute_statement("ALTER USER 'root'@'localhost' "
-                                f"IDENTIFIED BY '{root_password}'")
+        Mysql.execute_statement_or_exit(f"CREATE USER 'root'@'%' IDENTIFIED BY '{root_password}'")
+        Mysql.execute_statement_or_exit("GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' "
+                                        "WITH GRANT OPTION")
+        Mysql.execute_statement_or_exit("ALTER USER 'root'@'localhost' "
+                                        f"IDENTIFIED BY '{root_password}'")
 
         # Shutdown MySQL server
         logging.debug("Inital MySQL setup done, shutdown server..")
-        Mysql.execute_statement(sql="SHUTDOWN", username="root", password=root_password)
+        Mysql.execute_statement_or_exit(sql="SHUTDOWN", username="root", password=root_password)
         mysql_process.wait()
 
         return True
@@ -79,7 +80,7 @@ class Mysql:
     @staticmethod
     def server_start(use_root_password=True):
         """
-        Start the MySQL and wait for ready to serve connections.
+        Start the MySQL server and wait for ready to serve connections.
         """
 
         logging.info("Starting MySQL")
@@ -94,6 +95,21 @@ class Mysql:
         Mysql.wait_for_connection(password=root_password)
 
         return mysql_process
+
+    @staticmethod
+    def server_stop():
+        """
+        Stop the MySQL server.
+        """
+        logging.info("Stopping MySQL Server")
+
+        # Try to shutdown the server without a password
+        result = Mysql.execute_statement(sql="SHUTDOWN", log_error=False)
+
+        # Try to shutdown the server using the root password
+        if not result:
+            root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
+            Mysql.execute_statement(sql="SHUTDOWN", password=root_password)
 
     @staticmethod
     def wait_for_connection(timeout=120, username='root',
@@ -126,9 +142,21 @@ class Mysql:
         return False
 
     @staticmethod
-    def execute_statement(sql=None, username='root',
-                          password=None, database='mysql'):
+    def execute_statement_or_exit(sql=None, username='root',
+                                  password=None, database='mysql'):
 
+        """
+        Execute the given SQL statement.
+        """
+        result = Mysql.execute_statement(sql=sql, username=username,
+                                         password=password, database=database)
+        if not result:
+            sys.exit(1)
+
+    @staticmethod
+    def execute_statement(sql=None, username='root',
+                          password=None, database='mysql',
+                          log_error=True):
         """
         Execute the given SQL statement.
         """
@@ -143,8 +171,9 @@ class Mysql:
             cnx.close()
             return True
         except mysql.connector.Error as err:
-            logging.error("Failed to execute SQL: %s", err)
-            sys.exit(1)
+            if log_error:
+                logging.error("Failed to execute SQL: %s", err)
+            return False
 
     @staticmethod
     def backup_data():
