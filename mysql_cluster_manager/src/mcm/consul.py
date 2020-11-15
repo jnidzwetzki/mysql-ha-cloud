@@ -4,18 +4,26 @@ import os
 import logging
 import subprocess
 
+import consul as pyconsul
+
 class Consul:
 
     """
     This class encapsulates all Consul related things
     """
 
-    @staticmethod
-    def setup_connection():
+    def __init__(self):
+        """
+        Init the Consul client
+        """
+        self.client = None
+
+    def setup_connection(self):
         """
         Init consul connection.
         """
         logging.info("Register Consul connection")
+        self.client = pyconsul.Consul(host="localhost")
 
     @staticmethod
     def agent_start():

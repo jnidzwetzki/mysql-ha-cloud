@@ -37,7 +37,8 @@ class Actions:
                 logging.error("Unable to restore MySQL backup")
                 sys.exit(1)
 
-        Consul.setup_connection()
+        consul_client = Consul()
+        consul_client.setup_connection()
         mysql_process = Mysql.server_start()
 
         while True:
