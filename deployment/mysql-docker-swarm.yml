@@ -12,17 +12,22 @@ services:
              - consul_cluster
     environment:
       - CONSUL_BIND_INTERFACE=eth0
-    command: agent -ui -data-dir /consul/data -server -client 0.0.0.0 -retry-join consul_cluster -bootstrap-expect=3 
+    command: agent -ui -data-dir /consul/data -server -client 0.0.0.0 -retry-join consul_cluster -bootstrap-expect=5 
     deploy:
-      replicas: 3
+      replicas: 5
       endpoint_mode: dnsrr
       placement:
         max_replicas_per_node: 1
       update_config:
         parallelism: 1
-        delay: 10s
+        delay: 60s
       restart_policy:
         condition: on-failure
+    ports:
+       - target: 8500
+         published: 8500
+         protocol: tcp
+         mode: host
 
   mysql:
     image: jnidzwetzki/mysql-ha-cloud:latest
@@ -39,7 +44,6 @@ services:
       - MYSQL_BACKUP_PASSWORD=backup_secret
       - MYSQL_REPLICATION_USER=replication_user
       - MYSQL_REPLICATION_PASSWORD=replication_secret
-
     deploy:
       replicas: 3
       placement:
@@ -62,5 +66,3 @@ services:
        - MINIO_ACCESS_KEY=minio
        - MINIO_SECRET_KEY=minio123
     command: server /data
-
- 

@@ -41,9 +41,9 @@ This project will provide robust, tested, and easy to deploy containers for self
 
 ## Example - Using Docker Swarm
 
-In this example, a cluster consisting of four nodes running Debian 10 is used. The following services are deployed on the cluster:
+In this example, a cluster consisting of five nodes running Debian 10 is used. The following services are deployed on the cluster:
 
-* Three Consul instances, they are used for election of the primary MySQL server, for service discovery, and for providing additional information about the state of the cluster.
+* Five Consul instances, they are used for election of the primary MySQL server, for service discovery, and for providing additional information about the state of the cluster.
 * One of the MinIO object storage to store MySQL backups. These backups are used to bootstrap new MySQL replicas automatically. MinIO needs at least to provide four nodes / volumes to provide highly available. In addition, deploying such a setup without labeling the Docker nodes and creating stateful volumes is hard. The data on the S3 Bucket are re-written periodically. Therefore, we don't deploy a highly available and replicated version of MinIO in this example.
 * One primary MySQL server (read/write) and two read-only MySQL replicas. 
 
@@ -94,6 +94,7 @@ cqshak7jcuh97oqtznbcorkjp *   debian10-vm1        Ready               Active    
 deihndvm1vwbym9q9x3fyksev     debian10-vm2        Ready               Active              Reachable           19.03.13
 3rqp1te4d66tm56b7a1zzlpr2     debian10-vm3        Ready               Active              Reachable           19.03.13
 7l21f6mdy0dytmiy4oh70ttjo     debian10-vm4        Ready               Active              Reachable           19.03.13
+uttuejl2q48hwizz3bya5engw     debian10-vm5        Ready               Active              Reachable           19.03.13
 ```
 
 __Note__: Per default, manager nodes also execute Docker containers. This can lead to the situation that a manager node becomes unreliable if a heavy workload is processed; the node is detected as dead, and the workload becomes re-scheduled even if all nodes of the cluster are available. To avoid such situations, in a real-world setup, manager nodes should only interact as manager nodes and not execute any workload. This can be done by executing `docker node update --availability drain <NODE>` for the manager nodes. 
@@ -111,20 +112,22 @@ After the deployment is done, the stack should look as follows:
 
 ```
 $ docker stack ps mysql
-ID                  NAME                IMAGE                                      NODE                DESIRED STATE       CURRENT STATE          ERROR               PORTS
-u76l3tdmaari        mysql_minio.1       minio/minio:RELEASE.2020-10-18T21-54-12Z   debian10-vm1        Running             Running 12 hours ago                       
-0l9tfos9a1x3        mysql_mysql.1       jnidzwetzki/mysql-ha-cloud:latest          debian10-vm1        Running             Running 12 hours ago                       
-yv90rhchf8zo        mysql_consul.1      consul:1.8                                 debian10-vm2        Running             Running 12 hours ago                       
-8ih671k5quuy        mysql_mysql.2       jnidzwetzki/mysql-ha-cloud:latest          debian10-vm4        Running             Running 12 hours ago                       
-q13orlp3rwf0        mysql_consul.2      consul:1.8                                 debian10-vm3        Running             Running 12 hours ago                       
-n120oem9bpge        mysql_mysql.3       jnidzwetzki/mysql-ha-cloud:latest          debian10-vm3        Running             Running 12 hours ago                       
-mg2xf7pfz5nr        mysql_consul.3      consul:1.8                                 debian10-vm4        Running             Running 12 hours ago   
+ID                  NAME                IMAGE                                      NODE                DESIRED STATE       CURRENT STATE                  ERROR               PORTS
+zywtlmvswfz1        mysql_minio.1       minio/minio:RELEASE.2020-10-18T21-54-12Z   debian10-vm4        Running             Running 53 seconds ago                             
+v8hks8xa6vub        mysql_mysql.1       jnidzwetzki/mysql-ha-cloud:latest          debian10-vm2        Running             Preparing about a minute ago                       
+bhsvp0muev51        mysql_consul.1      consul:1.8                                 debian10-vm1        Running             Running about a minute ago                         *:8500->8500/tcp
+4no74auuqpv0        mysql_mysql.2       jnidzwetzki/mysql-ha-cloud:latest          debian10-vm3        Running             Preparing about a minute ago                       
+t1dan93zja0e        mysql_consul.2      consul:1.8                                 debian10-vm2        Running             Running about a minute ago                         *:8500->8500/tcp
+0b3pyj32v5db        mysql_mysql.3       jnidzwetzki/mysql-ha-cloud:latest          debian10-vm1        Running             Preparing about a minute ago                       
+gptp9fpmkw4r        mysql_consul.3      consul:1.8                                 debian10-vm4        Running             Running about a minute ago                         *:8500->8500/tcp
+i2egrq1cbieu        mysql_consul.4      consul:1.8                                 debian10-vm5        Running             Running 32 seconds ago                             *:8500->8500/tcp
+vvsf1wwb1zr2        mysql_consul.5      consul:1.8                                 debian10-vm3        Running             Running about a minute ago                         *:8500->8500/tcp
 
 $ docker stack services mysql
 ID                  NAME                MODE                REPLICAS               IMAGE                                      PORTS
-2tf6zdffzv4r        mysql_mysql         replicated          3/3 (max 1 per node)   jnidzwetzki/mysql-ha-cloud:latest          
-qsqge2j4vhkc        mysql_minio         replicated          1/1                    minio/minio:RELEASE.2020-10-18T21-54-12Z   *:9000->9000/tcp
-yap05yt8wkqs        mysql_consul        replicated          3/3 (max 1 per node)   consul:1.8     
+0v8qhwaaawx5        mysql_minio         replicated          1/1                    minio/minio:RELEASE.2020-10-18T21-54-12Z   *:9000->9000/tcp
+pro64635i2j4        mysql_mysql         replicated          3/3 (max 1 per node)   jnidzwetzki/mysql-ha-cloud:latest          
+ya9luugwcri4        mysql_consul        replicated          5/5 (max 1 per node)   consul:1.8       
 ```
 
 After the service is deployed, the state of the docker installation can be checked. On the Docker node, the following command can be excuted in one of the consul containers `a856acfc1635`:
@@ -133,12 +136,14 @@ After the service is deployed, the state of the docker installation can be check
 ```bash
 $ docker exec -t a856acfc1635 consul members
 Node          Address         Status  Type    Build  Protocol  DC   Segment
-87bed4fff4ce  10.0.6.2:8301   alive   server  1.8.5  2         dc1  <all>
-a856acfc1635  10.0.6.4:8301   alive   server  1.8.5  2         dc1  <all>
-ad114faf9844  10.0.6.3:8301   alive   server  1.8.5  2         dc1  <all>
-0a0085a4bdb8  10.0.6.11:8301  alive   client  1.8.4  2         dc1  <default>
-85212e1545ff  10.0.6.10:8301  alive   client  1.8.4  2         dc1  <default>
-a5f060f2ef02  10.0.6.9:8301   alive   client  1.8.4  2         dc1  <default>
+234d94d9063f  10.0.1.3:8301   alive   server  1.8.5  2         dc1  <all>
+753784b1624a  10.0.1.5:8301   alive   server  1.8.5  2         dc1  <all>
+cba13bbba731  10.0.1.2:8301   alive   server  1.8.5  2         dc1  <all>
+f00780b002e8  10.0.1.6:8301   alive   server  1.8.5  2         dc1  <all>
+f418f8ae1023  10.0.1.4:8301   alive   server  1.8.5  2         dc1  <all>
+0d744a098502  10.0.1.13:8301  alive   client  1.8.4  2         dc1  <default>
+72e398e0f1bc  10.0.1.14:8301  alive   client  1.8.4  2         dc1  <default>
+9e96a9596e76  10.0.1.15:8301  alive   client  1.8.4  2         dc1  <default>
 ```
 
 In the output above can be seen that the deployment of the Consul servers was successful. Three servers are deployed, and from the MySQL installations, three agents are started. 
