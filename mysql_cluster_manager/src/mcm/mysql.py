@@ -91,7 +91,7 @@ class Mysql:
         outfile.write("[mysqld]\n")
         outfile.write(f"server_id={server_id}\n")
         outfile.write("gtid_mode=ON\n")
-        outfile.write("enforce-gtid-consistency=ON\n") 
+        outfile.write("enforce-gtid-consistency=ON\n")
         outfile.close()
 
     @staticmethod

@@ -35,8 +35,11 @@ class Consul:
         Init consul connection.
         """
         logging.info("Register Consul connection")
-        self.client = pyconsul.Consul(host="localhost")
 
+        if not self.client is None:
+            self.client = pyconsul.Consul(host="localhost")
+
+    # pylint: disable=no-self-use
     def get_mysql_server_id(self):
         """
         Get the MySQL server id from consul
