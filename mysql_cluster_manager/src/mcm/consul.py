@@ -12,6 +12,18 @@ class Consul:
     This class encapsulates all Consul related things
     """
 
+    # The signeton instance
+    __instance = None
+
+    def __new__(cls):
+        """
+        Singleton implementation
+        """
+
+        if Consul.__instance is None:
+            Consul.__instance = object.__new__(cls)
+        return Consul.__instance
+
     def __init__(self):
         """
         Init the Consul client
@@ -24,6 +36,13 @@ class Consul:
         """
         logging.info("Register Consul connection")
         self.client = pyconsul.Consul(host="localhost")
+
+    def get_mysql_server_id(self):
+        """
+        Get the MySQL server id from consul
+        """
+
+        return 1
 
     @staticmethod
     def agent_start():

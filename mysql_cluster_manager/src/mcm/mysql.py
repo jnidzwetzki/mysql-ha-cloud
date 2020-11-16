@@ -10,6 +10,7 @@ from shutil import rmtree
 
 import mysql.connector
 
+from mcm.consul import Consul
 from mcm.minio import Minio
 
 class Mysql:
@@ -78,12 +79,30 @@ class Mysql:
         return True
 
     @staticmethod
+    def build_configuration():
+        """
+        Build the MySQL server configuratuion.
+        """
+        consul = Consul()
+        server_id = consul.get_mysql_server_id()
+
+        outfile = open("/etc/mysql/conf.d/zz_cluster.cnf", 'w')
+        outfile.write("# DO NOT EDIT - This file was generated automatically\n")
+        outfile.write("[mysqld]\n")
+        outfile.write(f"server_id={server_id}\n")
+        outfile.write("gtid_mode=ON\n")
+        outfile.write("enforce-gtid-consistency=ON\n")
+
+    @staticmethod
     def server_start(use_root_password=True):
         """
         Start the MySQL server and wait for ready to serve connections.
         """
 
         logging.info("Starting MySQL")
+
+        Mysql.build_configuration()
+
         mysql_server = [Mysql.mysql_server_binary, "--user=mysql"]
         mysql_process = subprocess.Popen(mysql_server)
 
