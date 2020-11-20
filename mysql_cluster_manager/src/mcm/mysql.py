@@ -86,7 +86,7 @@ class Mysql:
         """
         Build the MySQL server configuratuion.
         """
-        consul = Consul()
+        consul = Consul.get_instance()
         server_id = consul.get_mysql_server_id()
 
         outfile = open("/etc/mysql/conf.d/zz_cluster.cnf", 'w')
