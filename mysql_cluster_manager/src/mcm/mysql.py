@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+import shutil
 import logging
 import subprocess
 
@@ -23,6 +24,7 @@ class Mysql:
     xtrabackup_binary = "/usr/bin/xtrabackup"
     mysql_server_binary = "/usr/bin/mysqld_safe"
     mysqld_binary = "/usr/sbin/mysqld"
+    mysql_datadir = "/var/lib/mysql"
 
     @staticmethod
     def init_database_if_needed():
@@ -32,7 +34,7 @@ class Mysql:
 
         logging.info("Init MySQL database directory")
 
-        if os.path.isfile("/var/lib/mysql/ib_logfile0"):
+        if os.path.isfile(f"{Mysql.mysql_datadir}/ib_logfile0"):
             logging.info("MySQL is already initialized, skipping")
             return False
 
@@ -283,10 +285,24 @@ class Mysql:
         Restore the latest MySQL dump from the S3 Bucket
         """
         logging.info("Restore MySQL Backup")
+        current_time = time.time()
 
-        if os.path.isfile("/var/lib/mysql/ib_logfile0"):
-            logging.error("MySQL is already initialized, clean up first")
-            sys.exit(1)
+        if os.path.isfile(f"{Mysql.mysql_datadir}/ib_logfile0"):
+            logging.info("MySQL is already initialized, cleaning up first")
+            old_mysql_dir = f"{Mysql.mysql_datadir}_old_{current_time}"
+
+            os.mkdir(old_mysql_dir, 0o700)
+
+            # Renaming file per file, on some docker images
+            # the complete directory can not be moved
+            for entry in os.listdir(Mysql.mysql_datadir):
+                source_name = f"{Mysql.mysql_datadir}/{entry}"
+                dest_name = f"{old_mysql_dir}/{entry}"
+                logging.debug("Moving %s to %s", source_name, dest_name)
+                shutil.move(source_name, dest_name)
+
+            logging.info("Old MySQL data moved to: %s", old_mysql_dir)
+
 
         backup_file, _ = Minio.get_latest_backup()
 
@@ -295,7 +311,6 @@ class Mysql:
             return False
 
         # Restore directory
-        current_time = time.time()
         restore_dir = f"/tmp/mysql_restore_{current_time}"
 
         # Crate restore dir
