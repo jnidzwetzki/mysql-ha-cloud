@@ -45,7 +45,7 @@ class Minio:
         """
         Get the information about backups
         """
-         # Call Setup to ensure bucket and connection do exist
+        # Call Setup to ensure bucket and connection do exist
         Minio.setup_connection()
 
         logging.debug("Searching for latest MySQL Backup")
@@ -93,7 +93,7 @@ class Minio:
             element_changedate = element_changedate.strip()
             element_filename = element_filename.strip()
 
-            element_change_date = datetime.datetime.strptime(element_changedate, 
+            element_change_date = datetime.datetime.strptime(element_changedate,
                                                              '%Y-%m-%d %H:%M:%S UTC')
 
             if (newest_changedate is None) or (element_change_date > newest_changedate):
