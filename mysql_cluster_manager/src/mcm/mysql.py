@@ -7,6 +7,7 @@ import logging
 import subprocess
 
 from shutil import rmtree
+from datetime import timedelta, datetime
 
 import mysql.connector
 
@@ -24,7 +25,7 @@ class Mysql:
     mysqld_binary = "/usr/sbin/mysqld"
 
     @staticmethod
-    def init_database():
+    def init_database_if_needed():
         """
         Init a MySQL and configure permissions.
         """
@@ -249,6 +250,34 @@ class Mysql:
         logging.info("Backup was successfully created")
 
     @staticmethod
+    def create_backup_if_needed(maxage_seconds=60*60*6):
+        """
+        Create a new backup if needed. Default age
+        is 6h
+        """
+        logging.debug("Checking for backups")
+
+        consul_client = Consul()
+        if not consul_client.is_mysql_master():
+            logging.debug("We are not the replication master, skipping backup check")
+            return False
+
+        backup_name, backup_date = Minio.get_latest_backup()
+
+        if backup_date is None:
+            logging.info("No old backup found, creating a new one")
+            Mysql.backup_data()
+            return True
+
+        if datetime.now() - backup_date > timedelta(seconds=maxage_seconds):
+            logging.info("Old backup is outdated (%s, %s), creating new one",
+                         backup_name, backup_date)
+            Mysql.backup_data()
+            return True
+
+        return False
+
+    @staticmethod
     def restore_data():
         """
         Restore the latest MySQL dump from the S3 Bucket
@@ -259,7 +288,7 @@ class Mysql:
             logging.error("MySQL is already initialized, clean up first")
             sys.exit(1)
 
-        backup_file = Minio.get_latest_backup_file()
+        backup_file, _ = Minio.get_latest_backup()
 
         if backup_file is None:
             logging.error("Unable to restore backup, no backup found in bucket")

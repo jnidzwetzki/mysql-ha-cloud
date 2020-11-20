@@ -47,6 +47,14 @@ class Consul:
 
         return 1
 
+    # pylint: disable=no-self-use
+    def is_mysql_master(self):
+        """
+        Test if this is the MySQL replication master or not
+        """
+
+        return True
+
     @staticmethod
     def agent_start():
         """

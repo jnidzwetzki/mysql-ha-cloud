@@ -4,6 +4,8 @@ import sys
 import time
 import logging
 
+from datetime import timedelta, datetime
+
 from mcm.consul import Consul
 from mcm.minio import Minio
 from mcm.mysql import Mysql
@@ -22,14 +24,10 @@ class Actions:
 
         # Check if we have an existing backup to restore
         # Use this backup if exists, or init a new MySQL database
-        last_backup = Minio.get_latest_backup_file()
+        backup_exists = Minio.does_backup_exists()
 
-        if last_backup is None:
-            result = Mysql.init_database()
-
-            if not result:
-                logging.error("Unable to init MySQL database")
-                sys.exit(1)
+        if not backup_exists:
+            Mysql.init_database_if_needed()
         else:
             result = Mysql.restore_data()
 
@@ -41,7 +39,18 @@ class Actions:
         consul_client.setup_connection()
         mysql_process = Mysql.server_start()
 
+        last_backup_check = None
+
         while True:
             consul_process.poll()
             mysql_process.poll()
+
+            if last_backup_check is None:
+                Mysql.create_backup_if_needed()
+                last_backup_check = datetime.now()
+
+            elif datetime.now() - last_backup_check > timedelta(minutes=5):
+                Mysql.create_backup_if_needed()
+                last_backup_check = datetime.now()
+
             time.sleep(1)

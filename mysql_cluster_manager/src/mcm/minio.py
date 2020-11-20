@@ -41,11 +41,11 @@ class Minio:
         subprocess.run(mc_set_policy_bucket, check=True)
 
     @staticmethod
-    def get_latest_backup_file():
+    def get_backup_info():
         """
-        Get the latest backup filename from the bucket
+        Get the information about backups
         """
-        # Call Setup to ensure bucket and connection do exist
+         # Call Setup to ensure bucket and connection do exist
         Minio.setup_connection()
 
         logging.debug("Searching for latest MySQL Backup")
@@ -60,11 +60,29 @@ class Minio:
         process = subprocess.run(mc_search, check=True, capture_output=True)
         files = process.stdout.splitlines()
 
+        return files
+
+    @staticmethod
+    def does_backup_exists():
+        """
+        Does a old backups exists?
+        """
+        files = Minio.get_backup_info()
+
         if not files:
             logging.debug("S3 Bucket is empty")
-            return None
+            return False
 
-        newest_changedate = -1
+        return True
+
+    @staticmethod
+    def get_latest_backup():
+        """
+        Get the latest backup filename from the bucket
+        """
+        files = Minio.get_backup_info()
+
+        newest_changedate = None
         newest_file = None
 
         # Take the newest file
@@ -75,13 +93,13 @@ class Minio:
             element_changedate = element_changedate.strip()
             element_filename = element_filename.strip()
 
-            time_object = datetime.datetime.strptime(element_changedate, '%Y-%m-%d %H:%M:%S UTC')
-            file_timestamp = time_object.timestamp()
+            element_change_date = datetime.datetime.strptime(element_changedate, 
+                                                             '%Y-%m-%d %H:%M:%S UTC')
 
-            if file_timestamp > newest_changedate:
-                newest_changedate = file_timestamp
+            if (newest_changedate is None) or (element_change_date > newest_changedate):
+                newest_changedate = element_change_date
                 newest_file = element_filename
 
         logging.debug("Newest backup file '%s', date '%s'", newest_file, newest_changedate)
 
-        return newest_file
+        return (newest_file, newest_changedate)
