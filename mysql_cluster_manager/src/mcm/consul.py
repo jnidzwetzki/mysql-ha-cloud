@@ -5,6 +5,7 @@ import time
 import json
 import logging
 import subprocess
+import netifaces
 
 import consul as pyconsul
 
@@ -26,12 +27,11 @@ class Consul:
     # Server ID key
     kv_server_id = kv_prefix + "server_id"
 
-    @staticmethod
-    def get_instance():
-        """ Static access method. """
-        if Consul.__instance is None:
-            Consul()
-        return Consul.__instance
+    # Instances ID key
+    instances_path = kv_prefix + "instances/"
+
+    # Instances session key
+    instances_session_key = kv_prefix + "instances"
 
     def __init__(self):
         """
@@ -43,6 +43,14 @@ class Consul:
         Consul.__instance = self
         logging.info("Register Consul connection")
         self.client = pyconsul.Consul(host="localhost")
+        self.active_sessions = []
+
+    @staticmethod
+    def get_instance():
+        """ Static access method. """
+        if Consul.__instance is None:
+            Consul()
+        return Consul.__instance
 
     def get_mysql_server_id(self):
         """
@@ -102,6 +110,65 @@ class Consul:
         """
 
         return True
+
+    def register_node(self, mysql_version=None, server_id=None):
+        """
+        Register the node in Consul
+        """
+        logging.debug("Register MySQL instance in Consul")
+
+        interface = os.getenv('MCM_BIND_INTERFACE', "eth0")
+        ip_address = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]["addr"]
+
+        json_string = json.dumps({
+            'ip_address': ip_address,
+            'server_id': server_id,
+            'mysql_version': mysql_version
+        })
+
+        session = self.create_session(name=Consul.instances_session_key,
+                                      behavior='delete', ttl=15, lock_delay=0)
+
+        path = f"{Consul.instances_path}{ip_address}"
+        logging.debug("Consul: Path %s, value %s (session %s)",
+                      path, json_string, session)
+        put_result = self.client.kv.put(path, json_string, acquire=session)
+
+        if not put_result:
+            logging.error("Unable to create %s", path)
+            return False
+
+        return True
+
+    def refresh_sessions(self):
+        """
+        Refresh the active sessions
+        """
+        logging.debug("Keeping Consul sessions alive")
+
+        for session in self.active_sessions:
+            logging.debug("Refreshing session %s", session)
+            self.client.session.renew(session)
+
+    def create_session(self, name, behavior='release', ttl=None, lock_delay=15):
+        """
+        Create a new session.
+
+        Keep in mind that the real invalidation is around 2*ttl
+        see https://github.com/hashicorp/consul/issues/1172
+        """
+
+        session_id = self.client.session.create(name=name,
+                                                behavior=behavior,
+                                                ttl=ttl,
+                                                lock_delay=lock_delay)
+
+        # Keep session for auto refresh
+        self.active_sessions.append(session_id)
+
+        logging.debug("Created new session on node %s named %s", name, session_id)
+
+        return session_id
 
     @staticmethod
     def agent_start():

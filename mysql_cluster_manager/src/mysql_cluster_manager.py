@@ -26,7 +26,7 @@ args = parser.parse_args()
 
 # Configure logging
 logging.basicConfig(level=args.log_level,
-                    format='%(levelname)s %(name)s %(message)s')
+                    format='%(asctime)-15s %(levelname)s %(name)s %(message)s')
 
 # Check for all needed env vars
 required_envvars = ['CONSUL_BIND_INTERFACE', 'CONSUL_BOOTSTRAP_SERVER',

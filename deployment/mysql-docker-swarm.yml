@@ -39,6 +39,7 @@ services:
       - MINIO_ACCESS_KEY=minio
       - MINIO_SECRET_KEY=minio123
       - MINIO_URL=http://minio:9000
+      - MCM_BIND_INTERFACE=eth0
       - MYSQL_ROOT_PASSWORD=verysecret123
       - MYSQL_BACKUP_USER=backup_user
       - MYSQL_BACKUP_PASSWORD=backup_secret

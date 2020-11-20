@@ -5,15 +5,17 @@ import sys
 import time
 import shutil
 import logging
+import threading
 import subprocess
 
 from shutil import rmtree
-from datetime import timedelta, datetime
+from datetime import timedelta
 
 import mysql.connector
 
 from mcm.consul import Consul
 from mcm.minio import Minio
+from mcm.utils import Utils
 
 class Mysql:
 
@@ -135,6 +137,27 @@ class Mysql:
             Mysql.execute_statement(sql="SHUTDOWN", password=root_password)
 
     @staticmethod
+    def execute_query_as_root(sql, database='mysql'):
+        """
+        Execute the SQL query and return result.
+        """
+
+        root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
+
+        try:
+            cnx = mysql.connector.connect(user='root', password=root_password,
+                                          database=database,
+                                          unix_socket='/var/run/mysqld/mysqld.sock')
+
+
+            cur = cnx.cursor(dictionary=True, buffered=True)
+            cur.execute(sql)
+            return cur.fetchall()
+        finally:
+            cnx.close()
+
+
+    @staticmethod
     def wait_for_connection(timeout=120, username='root',
                             password=None, database='mysql'):
 
@@ -254,8 +277,7 @@ class Mysql:
     @staticmethod
     def create_backup_if_needed(maxage_seconds=60*60*6):
         """
-        Create a new backup if needed. Default age
-        is 6h
+        Create a new backup if needed. Default age is 6h
         """
         logging.debug("Checking for backups")
 
@@ -266,15 +288,14 @@ class Mysql:
 
         backup_name, backup_date = Minio.get_latest_backup()
 
-        if backup_date is None:
-            logging.info("No old backup found, creating a new one")
-            Mysql.backup_data()
-            return True
-
-        if datetime.now() - backup_date > timedelta(seconds=maxage_seconds):
+        if Utils.is_refresh_needed(backup_date, timedelta(seconds=maxage_seconds)):
             logging.info("Old backup is outdated (%s, %s), creating new one",
                          backup_name, backup_date)
-            Mysql.backup_data()
+
+            # Perform backup in extra thread to prevent Consul loop interruption
+            backup_thread = threading.Thread(target=Mysql.backup_data)
+            backup_thread.start()
+
             return True
 
         return False
