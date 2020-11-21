@@ -47,6 +47,7 @@ class Actions:
 
         last_backup_check = None
         last_session_refresh = None
+        last_replication_leader_check = None
 
         # Main Loop, heavy operations needs to be dispatched
         # to an extra thread. The loop needs to refresh the
@@ -54,6 +55,12 @@ class Actions:
         while True:
             consul_process.poll()
             mysql_process.poll()
+
+            # Try to replace a failed replication leader
+            if Utils.is_refresh_needed(last_replication_leader_check, timedelta(seconds=5)):
+                last_replication_leader_check = datetime.now()
+                if not Consul.get_instance().is_replication_leader():
+                    Consul.get_instance().try_to_become_replication_leader()
 
             # Keep Consul sessions alive
             if Utils.is_refresh_needed(last_session_refresh, timedelta(seconds=5)):

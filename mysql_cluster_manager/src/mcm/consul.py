@@ -5,9 +5,10 @@ import time
 import json
 import logging
 import subprocess
-import netifaces
 
 import consul as pyconsul
+
+from mcm.utils import Utils
 
 class Consul:
 
@@ -33,6 +34,9 @@ class Consul:
     # Instances session key
     instances_session_key = kv_prefix + "instances"
 
+    # Replication leader path
+    replication_leader_path = kv_prefix + "replication_leader"
+
     def __init__(self):
         """
         Init the Consul client
@@ -44,6 +48,7 @@ class Consul:
         logging.info("Register Consul connection")
         self.client = pyconsul.Consul(host="localhost")
         self.active_sessions = []
+        self.node_health_session = self.create_node_health_session()
 
     @staticmethod
     def get_instance():
@@ -51,6 +56,17 @@ class Consul:
         if Consul.__instance is None:
             Consul()
         return Consul.__instance
+
+    def create_node_health_session(self):
+        """
+        Create the node health session
+        all created KV entries automatically removed
+        on session destory.
+        """
+
+        return self.create_session(
+            name=Consul.instances_session_key,
+            behavior='delete', ttl=15, lock_delay=0)
 
     def get_mysql_server_id(self):
         """
@@ -103,22 +119,77 @@ class Consul:
 
         raise Exception("Unable to determine server id")
 
-    # pylint: disable=no-self-use
-    def is_mysql_master(self):
+    def is_replication_leader(self):
         """
-        Test if this is the MySQL replication master or not
+        Test if this is the MySQL replication leader or not
         """
 
-        return True
+        result = self.client.kv.get(Consul.replication_leader_path)
+
+        if result[1] is None:
+            logging.debug("No replication leader node vailable")
+            return False
+
+        leader_session = result[1]['Session']
+
+        logging.debug("Replication leader is %s, we are %s",
+                      leader_session, self.node_health_session)
+
+        return leader_session is self.node_health_session
+
+    def get_replication_leader_ip(self):
+        """
+        Get the IP of the current replication ledear
+        """
+        result = self.client.kv.get(Consul.replication_leader_path)
+
+        if result[1] is None:
+            return None
+
+        json_string = result[1]['Value']
+        server_data = json.loads(json_string)
+
+        if not "ip_address" in server_data:
+            logging.error("Invalid JSON returned from replication ledader (missing server_id) %s",
+                          json_string)
+
+        return server_data['ip_address']
+
+    def try_to_become_replication_leader(self):
+        """
+        Try to get the new replication leader
+        """
+
+        result = self.client.kv.get(Consul.replication_leader_path)
+
+        if result[1] is None:
+            logging.debug("Register MySQL instance in Consul")
+            ip_address = Utils.get_local_ip_address()
+
+            json_string = json.dumps({
+                'ip_address': ip_address
+            })
+
+            put_result = self.client.kv.put(Consul.replication_leader_path,
+                                            json_string,
+                                            acquire=self.node_health_session)
+
+            if put_result:
+                logging.info("We are the new replication leader")
+            else:
+                logging.debug("Unable to become replication leader, retry")
+
+            return put_result
+
+        return False
+
 
     def register_node(self, mysql_version=None, server_id=None):
         """
         Register the node in Consul
         """
         logging.debug("Register MySQL instance in Consul")
-
-        interface = os.getenv('MCM_BIND_INTERFACE', "eth0")
-        ip_address = netifaces.ifaddresses(interface)[netifaces.AF_INET][0]["addr"]
+        ip_address = Utils.get_local_ip_address()
 
         json_string = json.dumps({
             'ip_address': ip_address,
@@ -126,13 +197,11 @@ class Consul:
             'mysql_version': mysql_version
         })
 
-        session = self.create_session(name=Consul.instances_session_key,
-                                      behavior='delete', ttl=15, lock_delay=0)
-
         path = f"{Consul.instances_path}{ip_address}"
         logging.debug("Consul: Path %s, value %s (session %s)",
-                      path, json_string, session)
-        put_result = self.client.kv.put(path, json_string, acquire=session)
+                      path, json_string, self.node_health_session)
+
+        put_result = self.client.kv.put(path, json_string, acquire=self.node_health_session)
 
         if not put_result:
             logging.error("Unable to create %s", path)
@@ -169,6 +238,20 @@ class Consul:
         logging.debug("Created new session on node %s named %s", name, session_id)
 
         return session_id
+
+
+    def destroy_session(self, session_id):
+        """
+        Destory a previosly registered session
+        """
+
+        if not session_id in self.active_sessions:
+            return False
+
+        self.active_sessions.remove(session_id)
+        self.client.session.destroy(session_id)
+
+        return True
 
     @staticmethod
     def agent_start():

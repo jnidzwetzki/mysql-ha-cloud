@@ -282,7 +282,7 @@ class Mysql:
         logging.debug("Checking for backups")
 
         consul_client = Consul.get_instance()
-        if not consul_client.is_mysql_master():
+        if not consul_client.is_replication_leader():
             logging.debug("We are not the replication master, skipping backup check")
             return False
 
