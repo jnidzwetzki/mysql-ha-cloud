@@ -45,7 +45,7 @@ if args.operation == 'join_or_bootstrap':
 elif args.operation == 'mysql_backup':
     Mysql.backup_data()
 elif args.operation == 'mysql_restore':
-    Mysql.restore_data()
+    Mysql.restore_backup()
 elif args.operation == 'mysql_start':
     Mysql.server_start()
 elif args.operation == 'mysql_stop':

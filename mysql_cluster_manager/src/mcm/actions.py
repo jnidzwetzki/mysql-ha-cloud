@@ -20,21 +20,40 @@ class Actions:
         Join the existing cluster or bootstrap a new cluster
         """
 
-        Minio.setup_connection()
+        # Start the local consul agent
         consul_process = Consul.agent_start()
 
         # Check if we have an existing backup to restore
         # Use this backup if exists, or init a new MySQL database
+        Minio.setup_connection()
         backup_exists = Minio.does_backup_exists()
 
-        if not backup_exists:
-            Mysql.init_database_if_needed()
-        else:
-            result = Mysql.restore_data()
+        # Try to become session leader (needed to decide if we can create a database)
+        replication_leader = Consul.get_instance().try_to_become_replication_leader()
 
-            if not result:
-                logging.error("Unable to restore MySQL backup")
+        logging.info("Init local node (leader=%s, backup=%s)",
+                     replication_leader, backup_exists)
+
+        if replication_leader and not backup_exists:
+            Mysql.init_database_if_needed()
+        elif replication_leader and backup_exists:
+            Mysql.restore_backup_or_exit()
+        elif not replication_leader and backup_exists:
+            Mysql.restore_backup_or_exit()
+        elif not replication_leader and not backup_exists:
+            logging.info("We are not the replication leader, waiting for backups")
+            backup_exists = Utils.wait_for_backup_exists()
+
+            if not backup_exists:
+                logging.error("No backups to restore available, please check master logs, exiting")
                 sys.exit(1)
+
+            Mysql.restore_backup_or_exit()
+
+        else:
+            logging.error("This case should not happen (leader=%s, backup=%s)",
+                          replication_leader, backup_exists)
+            sys.exit(1)
 
         mysql_process = Mysql.server_start()
 
@@ -44,6 +63,9 @@ class Actions:
 
         Consul.get_instance().register_node(mysql_version=mysql_version,
                                             server_id=server_id)
+
+        # Remove the old replication configuration (e.g., from backup)
+        Mysql.delete_replication_config()
 
         last_backup_check = None
         last_session_refresh = None
@@ -59,8 +81,20 @@ class Actions:
             # Try to replace a failed replication leader
             if Utils.is_refresh_needed(last_replication_leader_check, timedelta(seconds=5)):
                 last_replication_leader_check = datetime.now()
+
                 if not Consul.get_instance().is_replication_leader():
-                    Consul.get_instance().try_to_become_replication_leader()
+                    promotion = Consul.get_instance().try_to_become_replication_leader()
+
+                    # Are we the new leader?
+                    if promotion:
+                        Mysql.delete_replication_config()
+
+                real_leader = Consul.get_instance().get_replication_leader_ip()
+                configured_leader = Mysql.get_replication_leader_ip()
+
+                if real_leader != configured_leader:
+                    logging.info("Replication leader change (old=%s, new=%s", configured_leader, real_leader)
+                    Mysql.change_to_replication_client(real_leader)
 
             # Keep Consul sessions alive
             if Utils.is_refresh_needed(last_session_refresh, timedelta(seconds=5)):

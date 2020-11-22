@@ -100,6 +100,52 @@ class Mysql:
         outfile.close()
 
     @staticmethod
+    def change_to_replication_client(leader_ip):
+        """
+        Make the local MySQL installation to a replication follower
+        """
+
+        logging.info("Setting up replication (leader=%s)", leader_ip)
+
+        replication_user = os.environ.get("MYSQL_REPLICATION_USER")
+        replication_password = os.environ.get("MYSQL_REPLICATION_PASSWORD")
+
+        Mysql.execute_query_as_root("STOP SLAVE", discard_result=True)
+
+        Mysql.execute_query_as_root(f"CHANGE MASTER TO MASTER_HOST = '{leader_ip}', "
+                                    f"MASTER_PORT = 3306, MASTER_USER = '{replication_user}', "
+                                    f"MASTER_PASSWORD = '{replication_password}', "
+                                    "MASTER_AUTO_POSITION = 1, GET_MASTER_PUBLIC_KEY = 1"
+                                    , discard_result=True)
+
+        Mysql.execute_query_as_root("START SLAVE", discard_result=True)
+
+    @staticmethod
+    def delete_replication_config():
+        """
+        Stop the replication
+        """
+        logging.debug("Removing old replication configuraion")
+        Mysql.execute_query_as_root("STOP SLAVE", discard_result=True)
+        Mysql.execute_query_as_root("RESET SLAVE ALL", discard_result=True)
+
+    @staticmethod
+    def get_replication_leader_ip():
+        """
+        Get the current replication leader ip
+        """
+        slave_status = Mysql.execute_query_as_root("SHOW SLAVE STATUS")
+
+        if len(slave_status) != 1:
+            return None
+
+        if not 'Master_Host' in slave_status[0]:
+            logging.error("Invalid output, master_host not found %s", slave_status)
+            return None
+
+        return slave_status[0]['Master_Host']
+
+    @staticmethod
     def server_start(use_root_password=True):
         """
         Start the MySQL server and wait for ready to serve connections.
@@ -137,12 +183,14 @@ class Mysql:
             Mysql.execute_statement(sql="SHUTDOWN", password=root_password)
 
     @staticmethod
-    def execute_query_as_root(sql, database='mysql'):
+    def execute_query_as_root(sql, database='mysql', discard_result=False):
         """
         Execute the SQL query and return result.
         """
 
         root_password = os.environ.get("MYSQL_ROOT_PASSWORD")
+
+        cnx = None
 
         try:
             cnx = mysql.connector.connect(user='root', password=root_password,
@@ -152,10 +200,14 @@ class Mysql:
 
             cur = cnx.cursor(dictionary=True, buffered=True)
             cur.execute(sql)
+
+            if discard_result:
+                return None
+
             return cur.fetchall()
         finally:
-            cnx.close()
-
+            if cnx:
+                cnx.close()
 
     @staticmethod
     def wait_for_connection(timeout=120, username='root',
@@ -301,7 +353,7 @@ class Mysql:
         return False
 
     @staticmethod
-    def restore_data():
+    def restore_backup():
         """
         Restore the latest MySQL dump from the S3 Bucket
         """
@@ -364,3 +416,16 @@ class Mysql:
         # Remove old backup data
         rmtree(restore_dir)
         return True
+
+
+    @staticmethod
+    def restore_backup_or_exit():
+        """
+        Restore a backup or exit
+        """
+
+        result = Mysql.restore_backup()
+
+        if not result:
+            logging.error("Unable to restore MySQL backup")
+            sys.exit(1)

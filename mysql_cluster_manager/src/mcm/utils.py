@@ -1,10 +1,14 @@
 """This file contains the utils of the cluster manager"""
 
 import os
+import time
 
 from datetime import datetime
 
 import netifaces
+
+from mcm.minio import Minio
+
 
 class Utils:
     """
@@ -29,3 +33,23 @@ class Utils:
             return True
 
         return datetime.now() - last_execution > max_timedelta
+
+    @staticmethod
+    def wait_for_backup_exists():
+        """
+        Wait for a backup to be occour
+        """
+
+        Minio.setup_connection()
+
+        retry_counter = 600
+
+        for _ in range(retry_counter):
+            backup_exists = Minio.does_backup_exists()
+
+            if backup_exists:
+                return True
+
+        time.sleep(1000)
+
+        return False
