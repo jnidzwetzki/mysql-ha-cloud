@@ -127,7 +127,7 @@ class Consul:
         result = self.client.kv.get(Consul.replication_leader_path)
 
         if result[1] is None:
-            logging.debug("No replication leader node vailable")
+            logging.debug("No replication leader node available")
             return False
 
         leader_session = result[1]['Session']
@@ -135,7 +135,7 @@ class Consul:
         logging.debug("Replication leader is %s, we are %s",
                       leader_session, self.node_health_session)
 
-        return leader_session is self.node_health_session
+        return leader_session == self.node_health_session
 
     def get_replication_leader_ip(self):
         """

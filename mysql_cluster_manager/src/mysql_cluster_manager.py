@@ -50,6 +50,8 @@ elif args.operation == 'mysql_start':
     Mysql.server_start()
 elif args.operation == 'mysql_stop':
     Mysql.server_stop()
+elif args.operation == 'mysql_autobackup':
+    Mysql.create_backup_if_needed()
 else:
     logging.error("Unknown operation: %s", {args.operation})
     sys.exit(1)
