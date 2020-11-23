@@ -184,6 +184,25 @@ class Consul:
         return False
 
 
+    def register_service(self, leader=False, port=3306):
+        """
+        Register the MySQL primary service
+        """
+        ip_address = Utils.get_local_ip_address()
+
+        tags = []
+        service_id = f"mysql_{ip_address}"
+
+        if leader:
+            tags.append("leader")
+        else:
+            tags.append("follower")
+
+        logging.info("Register new service_id=%s, tags=%s", service_id, tags)
+
+        self.client.agent.service.deregister(service_id)
+        self.client.agent.service.register("mysql", service_id=service_id, port=port, tags=tags)
+
     def register_node(self, mysql_version=None, server_id=None):
         """
         Register the node in Consul

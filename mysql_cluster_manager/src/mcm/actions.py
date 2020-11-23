@@ -71,6 +71,8 @@ class Actions:
         last_session_refresh = None
         last_replication_leader_check = None
 
+        Consul.get_instance().register_service(replication_leader)
+
         # Main Loop, heavy operations needs to be dispatched
         # to an extra thread. The loop needs to refresh the
         # Consul sessions every few seconds.
@@ -88,6 +90,8 @@ class Actions:
                     # Are we the new leader?
                     if promotion:
                         Mysql.delete_replication_config()
+                        Consul.get_instance().register_service(True)
+
                     else:
                         real_leader = Consul.get_instance().get_replication_leader_ip()
                         configured_leader = Mysql.get_replication_leader_ip()
