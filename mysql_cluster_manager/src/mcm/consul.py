@@ -198,9 +198,15 @@ class Consul:
         else:
             tags.append("follower")
 
-        logging.info("Register new service_id=%s, tags=%s", service_id, tags)
+        # Unrregister old service
+        all_services = self.client.agent.services()
 
-        self.client.agent.service.deregister(service_id)
+        if service_id in all_services:
+            logging.debug("Unregister old service %s (%s)", service_id, all_services)
+            self.client.agent.service.deregister(service_id)
+
+        # Register new service
+        logging.info("Register new service_id=%s, tags=%s", service_id, tags)
         self.client.agent.service.register("mysql", service_id=service_id, port=port, tags=tags)
 
     def register_node(self, mysql_version=None, server_id=None):
