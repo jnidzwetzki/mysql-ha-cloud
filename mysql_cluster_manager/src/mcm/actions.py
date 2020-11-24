@@ -9,6 +9,7 @@ from datetime import timedelta, datetime
 from mcm.consul import Consul
 from mcm.minio import Minio
 from mcm.mysql import Mysql
+from mcm.proxysql import Proxysql
 from mcm.utils import Utils
 
 class Actions:
@@ -55,7 +56,11 @@ class Actions:
                           replication_leader, backup_exists)
             sys.exit(1)
 
+        # Start MySQL
         mysql_process = Mysql.server_start()
+
+        # Start ProxySQL
+        Proxysql.start_proxysql()
 
         # Get data from MySQL
         mysql_version = Mysql.execute_query_as_root("SELECT version()")[0]['version()']
