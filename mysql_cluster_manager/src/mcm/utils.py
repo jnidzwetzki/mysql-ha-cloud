@@ -8,6 +8,7 @@ from datetime import datetime
 import netifaces
 
 from mcm.minio import Minio
+from mcm.consul import Consul
 
 
 class Utils:
@@ -42,7 +43,7 @@ class Utils:
 
         Minio.setup_connection()
 
-        retry_counter = 600
+        retry_counter = 100
 
         for _ in range(retry_counter):
             backup_exists = Minio.does_backup_exists()
@@ -50,6 +51,8 @@ class Utils:
             if backup_exists:
                 return True
 
-        time.sleep(1000)
+        # Keep consul sessions alive
+        Consul.get_instance().refresh_sessions()
+        time.sleep(5000)
 
         return False
