@@ -55,6 +55,8 @@ services:
       update_config:
         parallelism: 1
         delay: 60s
+      ports:
+        - 6032:6032
       restart_policy:
         condition: on-failure
 
