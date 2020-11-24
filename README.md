@@ -136,14 +136,14 @@ After the service is deployed, the state of the docker installation can be check
 ```bash
 $ docker exec -t a856acfc1635 consul members
 Node          Address         Status  Type    Build  Protocol  DC   Segment
-234d94d9063f  10.0.1.3:8301   alive   server  1.8.5  2         dc1  <all>
-753784b1624a  10.0.1.5:8301   alive   server  1.8.5  2         dc1  <all>
-cba13bbba731  10.0.1.2:8301   alive   server  1.8.5  2         dc1  <all>
-f00780b002e8  10.0.1.6:8301   alive   server  1.8.5  2         dc1  <all>
-f418f8ae1023  10.0.1.4:8301   alive   server  1.8.5  2         dc1  <all>
-0d744a098502  10.0.1.13:8301  alive   client  1.8.4  2         dc1  <default>
-72e398e0f1bc  10.0.1.14:8301  alive   client  1.8.4  2         dc1  <default>
-9e96a9596e76  10.0.1.15:8301  alive   client  1.8.4  2         dc1  <default>
+234d94d9063f  10.0.3.3:8301   alive   server  1.8.5  2         dc1  <all>
+753784b1624a  10.0.3.5:8301   alive   server  1.8.5  2         dc1  <all>
+cba13bbba731  10.0.3.2:8301   alive   server  1.8.5  2         dc1  <all>
+f00780b002e8  10.0.3.6:8301   alive   server  1.8.5  2         dc1  <all>
+f418f8ae1023  10.0.3.4:8301   alive   server  1.8.5  2         dc1  <all>
+0d744a098502  10.0.3.40:8301  alive   client  1.8.4  2         dc1  <default>
+72e398e0f1bc  10.0.3.41:8301  alive   client  1.8.4  2         dc1  <default>
+9e96a9596e76  10.0.3.42:8301  alive   client  1.8.4  2         dc1  <default>
 ```
 
 In the output above can be seen that the deployment of the Consul servers was successful. Three servers are deployed, and from the MySQL installations, three agents are started. 
@@ -238,9 +238,9 @@ _mysql._follower.service.consul. 0 IN	SRV	1 1 3306 f36ddfed8617.node.dc1.consul.
 _mysql._follower.service.consul. 0 IN	SRV	1 1 3306 ddcadd280a98.node.dc1.consul.
 
 ;; ADDITIONAL SECTION:
-f36ddfed8617.node.dc1.consul. 0	IN	A	10.0.1.40
+f36ddfed8617.node.dc1.consul. 0	IN	A	10.0.3.40
 f36ddfed8617.node.dc1.consul. 0	IN	TXT	"consul-network-segment="
-ddcadd280a98.node.dc1.consul. 0	IN	A	10.0.1.42
+ddcadd280a98.node.dc1.consul. 0	IN	A	10.0.3.42
 ddcadd280a98.node.dc1.consul. 0	IN	TXT	"consul-network-segment="
 
 ;; Query time: 1 msec
