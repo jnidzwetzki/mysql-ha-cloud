@@ -208,7 +208,7 @@ $ docker exec -t a856acfc1635 dig @127.0.0.1 -p 8600 _mysql._leader.service.cons
 _mysql._leader.service.consul. 0 IN	SRV	1 1 3306 cd1e7b5ae9a4.node.dc1.consul.
 
 ;; ADDITIONAL SECTION:
-cd1e7b5ae9a4.node.dc1.consul. 0	IN	A	10.0.1.15
+cd1e7b5ae9a4.node.dc1.consul. 0	IN	A	10.0.3.41
 cd1e7b5ae9a4.node.dc1.consul. 0	IN	TXT	"consul-network-segment="
 
 ;; Query time: 1 msec
@@ -238,9 +238,9 @@ _mysql._follower.service.consul. 0 IN	SRV	1 1 3306 f36ddfed8617.node.dc1.consul.
 _mysql._follower.service.consul. 0 IN	SRV	1 1 3306 ddcadd280a98.node.dc1.consul.
 
 ;; ADDITIONAL SECTION:
-f36ddfed8617.node.dc1.consul. 0	IN	A	10.0.1.13
+f36ddfed8617.node.dc1.consul. 0	IN	A	10.0.1.40
 f36ddfed8617.node.dc1.consul. 0	IN	TXT	"consul-network-segment="
-ddcadd280a98.node.dc1.consul. 0	IN	A	10.0.1.14
+ddcadd280a98.node.dc1.consul. 0	IN	A	10.0.1.42
 ddcadd280a98.node.dc1.consul. 0	IN	TXT	"consul-network-segment="
 
 ;; Query time: 1 msec
