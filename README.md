@@ -174,7 +174,7 @@ mysql: [Warning] Using a password on the command line interface can be insecure.
 +----------------------------------+-------------+------------------+-------------+---------------+-----------------+---------------------+-------------------------------+---------------+-----------------------+------------------+-------------------+-----------------+---------------------+--------------------+------------------------+-------------------------+-----------------------------+------------+------------+--------------+---------------------+-----------------+-----------------+----------------+---------------+--------------------+--------------------+--------------------+-----------------+-------------------+----------------+-----------------------+-------------------------------+---------------+---------------+----------------+----------------+-----------------------------+------------------+--------------------------------------+-------------------------+-----------+---------------------+--------------------------------------------------------+--------------------+-------------+-------------------------+--------------------------+----------------+--------------------+--------------------+----------------------------------------------------------------------------------+---------------+----------------------+--------------+--------------------+------------------------+-----------------------+-------------------+
 ```
 
-Or list the available backups of the database
+Or list the available backups of the database:
 
 ```bash
 $ docker exec -t a856acfc1635  mc ls backup/mysqlbackup
@@ -184,4 +184,67 @@ $ docker exec -t a856acfc1635  mc ls backup/mysqlbackup
 [2020-11-21 09:52:18 UTC] 1.6MiB mysql_backup_1605952329.1124055.tgz
 [2020-11-22 12:46:39 UTC] 1.6MiB mysql_backup_1606049190.0292351.tgz
 [2020-11-22 18:50:19 UTC] 1.6MiB mysql_backup_1606071009.6974795.tgz
+```
+
+The DNS settings for the service discovery could also be tested:
+
+```bash
+$ docker exec -t a856acfc1635 dig @127.0.0.1 -p 8600 _mysql._leader.service.consul SRV
+
+; <<>> DiG 9.11.5-P4-5.1+deb10u2-Debian <<>> @127.0.0.1 -p 8600 _mysql._leader.service.consul SRV
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 61130
+;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 3
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;_mysql._leader.service.consul.	IN	SRV
+
+;; ANSWER SECTION:
+_mysql._leader.service.consul. 0 IN	SRV	1 1 3306 cd1e7b5ae9a4.node.dc1.consul.
+
+;; ADDITIONAL SECTION:
+cd1e7b5ae9a4.node.dc1.consul. 0	IN	A	10.0.1.15
+cd1e7b5ae9a4.node.dc1.consul. 0	IN	TXT	"consul-network-segment="
+
+;; Query time: 1 msec
+;; SERVER: 127.0.0.1#8600(127.0.0.1)
+;; WHEN: Tue Nov 24 07:06:10 UTC 2020
+;; MSG SIZE  rcvd: 158
+
+
+
+$ docker exec -t a856acfc1635 dig @127.0.0.1 -p 8600 _mysql._follower.service.consul SRV
+
+; <<>> DiG 9.11.5-P4-5.1+deb10u2-Debian <<>> @127.0.0.1 -p 8600 _mysql._follower.service.consul SRV
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 46995
+;; flags: qr aa rd; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 5
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;_mysql._follower.service.consul. IN	SRV
+
+;; ANSWER SECTION:
+_mysql._follower.service.consul. 0 IN	SRV	1 1 3306 f36ddfed8617.node.dc1.consul.
+_mysql._follower.service.consul. 0 IN	SRV	1 1 3306 ddcadd280a98.node.dc1.consul.
+
+;; ADDITIONAL SECTION:
+f36ddfed8617.node.dc1.consul. 0	IN	A	10.0.1.13
+f36ddfed8617.node.dc1.consul. 0	IN	TXT	"consul-network-segment="
+ddcadd280a98.node.dc1.consul. 0	IN	A	10.0.1.14
+ddcadd280a98.node.dc1.consul. 0	IN	TXT	"consul-network-segment="
+
+;; Query time: 1 msec
+;; SERVER: 127.0.0.1#8600(127.0.0.1)
+;; WHEN: Tue Nov 24 07:06:20 UTC 2020
+;; MSG SIZE  rcvd: 260
 ```
