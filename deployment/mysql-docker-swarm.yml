@@ -3,6 +3,9 @@ version: "3.8"
 networks:
   backend:
 
+volumes:
+  backup-volume:
+
 services:
   consul:
     image: consul:1.8
@@ -61,6 +64,8 @@ services:
        backend:
           aliases:
              - minio_endpoint
+    volumes:
+       - backup-volume:/data
     ports:
        - 9000:9000
     environment:
