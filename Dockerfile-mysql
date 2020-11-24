@@ -51,7 +51,7 @@ RUN \
     # Install mysql cluster manager \
     # \
     apt-get install -y python3.7 python3.7-dev python3-pip && \
-    pip3 install -r requirements.txt \
+    pip3 install -r requirements.txt && \
     # \
     # Install ProxySQL \
     # \
