@@ -55,9 +55,9 @@ RUN \
     # \
     # Install ProxySQL \
     # \
-    wget https://github.com/sysown/proxysql/releases/download/v2.0.14/proxysql_2.0.14-ubuntu16_amd64.deb && \
-    dpkg -i proxysql_2.0.14-ubuntu16_amd64.deb && \
-    rm proxysql_2.0.14-ubuntu16_amd64.deb
+    wget https://github.com/sysown/proxysql/releases/download/v2.0.15/proxysql_2.0.15-debian10_amd64.deb && \
+    dpkg -i proxysql_2.0.15-debian10_amd64.deb && \
+    rm proxysql_2.0.15-debian10_amd64.deb
 
 CMD ["bash", "entry-point.sh"]
 EXPOSE 6032/tcp
