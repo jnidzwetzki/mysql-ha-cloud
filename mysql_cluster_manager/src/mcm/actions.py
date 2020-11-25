@@ -43,7 +43,7 @@ class Actions:
             Mysql.restore_backup_or_exit()
         elif not replication_leader and not backup_exists:
             logging.info("We are not the replication leader, waiting for backups")
-            backup_exists = Utils.wait_for_backup_exists()
+            backup_exists = Utils.wait_for_backup_exists(Consul.get_instance())
 
             if not backup_exists:
                 logging.error("No backups to restore available, please check master logs, exiting")

@@ -8,7 +8,6 @@ from datetime import datetime
 import netifaces
 
 from mcm.minio import Minio
-from mcm.consul import Consul
 
 
 class Utils:
@@ -36,7 +35,7 @@ class Utils:
         return datetime.now() - last_execution > max_timedelta
 
     @staticmethod
-    def wait_for_backup_exists():
+    def wait_for_backup_exists(consul):
         """
         Wait for a backup to be occour
         """
@@ -52,7 +51,7 @@ class Utils:
                 return True
 
         # Keep consul sessions alive
-        Consul.get_instance().refresh_sessions()
+        consul.refresh_sessions()
         time.sleep(5000)
 
         return False
