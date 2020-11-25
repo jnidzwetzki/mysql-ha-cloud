@@ -60,3 +60,4 @@ RUN \
     rm proxysql_2.0.1-ubuntu16_amd64.deb
 
 CMD ["bash", "entry-point.sh"]
+EXPOSE 6032/tcp
