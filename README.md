@@ -46,6 +46,7 @@ In this example, a cluster consisting of five nodes running Debian 10 is used. T
 * Five Consul instances, they are used for election of the primary MySQL server, for service discovery, and for providing additional information about the state of the cluster.
 * One of the MinIO object storage to store MySQL backups. These backups are used to bootstrap new MySQL replicas automatically. MinIO needs at least to provide four nodes / volumes to provide highly available. In addition, deploying such a setup without labeling the Docker nodes and creating stateful volumes is hard. The data on the S3 Bucket are re-written periodically. Therefore, we don't deploy a highly available and replicated version of MinIO in this example.
 * One primary MySQL server (read/write) and two read-only MySQL replicas. 
+* An instance of [ProxySQL](https://github.com/sysown/proxysql) is available on every MySQL-Server. ProxySQL is used to access the MySQL installations. Write requests (e.g., `INSERT` or `UPDATE`) are automatically send to the replication leader, and read requests (e.g., `SELECT`) are sent to the replication follower.
 
 The four Docker nodes should be running in different availability zones. Therefore, one Docker node or availability zones can fail, and the MySQL service is still available. 
 
