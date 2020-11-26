@@ -36,7 +36,7 @@ class Minio:
         subprocess.run(mc_create_bucket, check=True)
 
         # Set expire policy on bucket
-        mc_set_policy_bucket = [Minio.minio_binary, "ilm", "set", "--id=expire_rule",
+        mc_set_policy_bucket = [Minio.minio_binary, "ilm", "edit", "--id=expire_rule",
                                 "-expiry-days=7", bucket_name]
         subprocess.run(mc_set_policy_bucket, check=True)
 
