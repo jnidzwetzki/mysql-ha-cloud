@@ -12,7 +12,7 @@ jobs:
         script:
            - pip install -r mysql_cluster_manager/requirements.txt
            - cd mysql_cluster_manager && pylint src
-           - mysql_cluster_manager/src/mysql_cluster_manager.py
+           - src/mysql_cluster_manager.py
      - 
         stage: "Build docker"
         script: docker build -t jnidzwetzki/mysql-ha-cloud:latest -f Dockerfile-mysql .
