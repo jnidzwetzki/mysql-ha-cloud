@@ -120,6 +120,11 @@ class Mysql:
 
         Mysql.execute_query_as_root("START SLAVE", discard_result=True)
 
+        # Set replicia to read only
+        logging.info("Set MySQL-Server mode to read-only")
+        Mysql.execute_query_as_root("SET GLOBAL read_only = 1", discard_result=True)
+        Mysql.execute_query_as_root("SET GLOBAL super_read_only = 1", discard_result=True)
+
     @staticmethod
     def delete_replication_config():
         """
@@ -128,6 +133,11 @@ class Mysql:
         logging.debug("Removing old replication configuraion")
         Mysql.execute_query_as_root("STOP SLAVE", discard_result=True)
         Mysql.execute_query_as_root("RESET SLAVE ALL", discard_result=True)
+
+        # Accept writes
+        logging.info("Set MySQL-Server mode to read-write")
+        Mysql.execute_query_as_root("SET GLOBAL super_read_only = 0", discard_result=True)
+        Mysql.execute_query_as_root("SET GLOBAL read_only = 0", discard_result=True)
 
     @staticmethod
     def get_replication_leader_ip():
