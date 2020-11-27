@@ -18,7 +18,7 @@ class Proxysql:
         subprocess.run(proxysql_init, check=True)
 
         # Start the proxysql
-        proxysql = ["/usr/bin/proxysql", "--idle-threads", "-c", "/etc/proxysql.cnf"]
-        subprocess.run(proxysql, check=True)
+        # proxysql = ["/usr/bin/proxysql", "--idle-threads", "-c", "/etc/proxysql.cnf"]
+        # subprocess.run(proxysql, check=True)
 
         return True
