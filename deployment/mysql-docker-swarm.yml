@@ -48,6 +48,8 @@ services:
       - MYSQL_BACKUP_PASSWORD=backup_secret
       - MYSQL_REPLICATION_USER=replication_user
       - MYSQL_REPLICATION_PASSWORD=replication_secret
+      - MYSQL_APPLICATION_USER=mysql_user
+      - MYSQL_APPLICATION_PASSWORD=mysql_secret
     deploy:
       replicas: 3
       placement:
