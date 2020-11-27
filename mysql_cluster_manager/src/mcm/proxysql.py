@@ -13,20 +13,12 @@ class Proxysql:
         Start the ProxySQL
         """
 
+        # Init proxysql
+        proxysql_init = ["/usr/bin/proxysql", "--idle-threads", "-c", "/etc/proxysql.cnf", "--initial"]
+        subprocess.run(proxysql_init, check=True)
+
         # Start the proxysql
-        proxysql = ["/etc/init.d/proxysql", "start"]
-        subprocess.run(proxysql, check=True)
-
-        return True
-
-    @staticmethod
-    def stop_proxysql():
-        """
-        Stop the ProxySQL
-        """
-
-        # Stop the proxysql
-        proxysql = ["/etc/init.d/proxysql", "stop"]
+        proxysql = ["/usr/bin/proxysql", "--idle-threads", "-c", "/etc/proxysql.cnf"]
         subprocess.run(proxysql, check=True)
 
         return True
