@@ -68,6 +68,27 @@ class Consul:
             name=Consul.instances_session_key,
             behavior='delete', ttl=15, lock_delay=0)
 
+    def get_all_registered_nodes(self):
+        """
+        Get all registered MySQL nodes
+        """
+        mysql_nodes = []
+        result = self.client.kv.get(Consul.instances_path, recurse=True)
+
+        if result[1] is not None:
+            for node in result[1]:
+                node_value = node['Value']
+                node_data = json.loads(node_value)
+
+                if not "ip_address" in node_data:
+                    logging.error("ip_address missing in %s", node)
+                    continue
+
+                ip_address = node_data["ip_address"]
+                mysql_nodes.append(ip_address)
+
+        return mysql_nodes
+
     def get_mysql_server_id(self):
         """
         Get the MySQL server id from consul

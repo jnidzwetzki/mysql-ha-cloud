@@ -8,7 +8,9 @@ import logging
 import argparse
 
 from mcm.actions import Actions
+from mcm.consul import Consul
 from mcm.mysql import Mysql
+from mcm.proxysql import Proxysql
 
 parser = argparse.ArgumentParser(
     description="MySQL cluster manager",
@@ -52,6 +54,10 @@ elif args.operation == 'mysql_stop':
     Mysql.server_stop()
 elif args.operation == 'mysql_autobackup':
     Mysql.create_backup_if_needed()
+elif args.operation == 'proxysql_init':
+    Proxysql.inital_setup()
+    nodes = Consul.get_instance().get_all_registered_nodes()
+    Proxysql.set_mysql_server(nodes)
 else:
     logging.error("Unknown operation: %s", {args.operation})
     sys.exit(1)

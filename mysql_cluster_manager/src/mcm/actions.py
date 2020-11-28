@@ -56,11 +56,14 @@ class Actions:
                           replication_leader, backup_exists)
             sys.exit(1)
 
+        # Start ProxySQL
+        Proxysql.start_proxysql()
+
         # Start MySQL
         mysql_process = Mysql.server_start()
 
-        # Start ProxySQL
-        Proxysql.start_proxysql()
+        # Configure ProxySQL
+        Proxysql.inital_setup()
 
         # Get data from MySQL
         mysql_version = Mysql.execute_query_as_root("SELECT version()")[0]['version()']
@@ -77,6 +80,7 @@ class Actions:
         last_replication_leader_check = None
 
         Consul.get_instance().register_service(replication_leader)
+        proxysql = Proxysql()
 
         # Main Loop, heavy operations needs to be dispatched
         # to an extra thread. The loop needs to refresh the
@@ -88,6 +92,10 @@ class Actions:
             # Try to replace a failed replication leader
             if Utils.is_refresh_needed(last_replication_leader_check, timedelta(seconds=5)):
                 last_replication_leader_check = datetime.now()
+
+                # Update ProxySQL nodes
+                mysql_nodes = Consul.get_instance().get_all_registered_nodes()
+                proxysql.update_mysql_server_if_needed(mysql_nodes)
 
                 if not Consul.get_instance().is_replication_leader():
                     promotion = Consul.get_instance().try_to_become_replication_leader()

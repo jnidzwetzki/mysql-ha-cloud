@@ -262,12 +262,13 @@ class Mysql:
 
     @staticmethod
     def execute_statement_or_exit(sql=None, username='root',
-                                  password=None, database='mysql'):
+                                  password=None, database='mysql',
+                                  port=None):
 
         """
         Execute the given SQL statement.
         """
-        result = Mysql.execute_statement(sql=sql, username=username,
+        result = Mysql.execute_statement(sql=sql, username=username, port=port,
                                          password=password, database=database)
         if not result:
             sys.exit(1)
@@ -275,14 +276,20 @@ class Mysql:
     @staticmethod
     def execute_statement(sql=None, username='root',
                           password=None, database='mysql',
-                          log_error=True):
+                          port=None, log_error=True):
         """
         Execute the given SQL statement.
         """
         try:
+
+            if port is None:
+                unix_socket = '/var/run/mysqld/mysqld.sock'
+            else:
+                unix_socket = None
+
             cnx = mysql.connector.connect(user=username, password=password,
-                                          database=database,
-                                          unix_socket='/var/run/mysqld/mysqld.sock')
+                                          database=database, port=port,
+                                          unix_socket=unix_socket)
             cursor = cnx.cursor()
 
             cursor.execute(sql)
