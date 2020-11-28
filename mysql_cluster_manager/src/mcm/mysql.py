@@ -47,6 +47,17 @@ class Mysql:
         # Start server the first time
         mysql_process = Mysql.server_start(use_root_password=False)
 
+        # Create application user
+        logging.debug("Creating MySQL user for the application")
+        application_user = os.environ.get("MYSQL_APPLICATION_USER")
+        appication_password = os.environ.get("MYSQL_APPLICATION_PASSWORD")
+        Mysql.execute_statement_or_exit(f"CREATE USER '{application_user}'@'localhost' "
+                                        f"IDENTIFIED BY '{appication_password}'")
+        Mysql.execute_statement_or_exit(f"GRANT ALL PRIVILEGES ON *.* TO '{application_user}'@'localhost'")
+        Mysql.execute_statement_or_exit(f"CREATE USER '{application_user}'@'%' "
+                                        f"IDENTIFIED BY '{appication_password}'")
+        Mysql.execute_statement_or_exit(f"GRANT ALL PRIVILEGES ON *.* TO '{application_user}'@'%'")
+
         # Create backup user
         logging.debug("Creating MySQL user for backups")
         backup_user = os.environ.get("MYSQL_BACKUP_USER")
