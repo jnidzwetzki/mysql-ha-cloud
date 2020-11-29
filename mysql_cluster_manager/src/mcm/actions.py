@@ -29,6 +29,19 @@ class Actions:
         Minio.setup_connection()
         backup_exists = Minio.does_backup_exists()
 
+        # Test for unstable environment (other nodes are present and no leader is present)
+        # We don't want to become the new leader on the restored backup directly
+        #
+        # Needs be be checked before Consul.get_instance().register_node() is called
+        #
+        while Consul.get_instance().get_replication_leader_ip() is None:
+            nodes = Consul.get_instance().get_all_registered_nodes()
+            if len(nodes) == 0:
+                break
+
+            logging.warning("Other nodes (%s) detected but no leader, waiting", nodes)
+            time.sleep(5)
+
         # Try to become session leader (needed to decide if we can create a database)
         replication_leader = Consul.get_instance().try_to_become_replication_leader()
 
