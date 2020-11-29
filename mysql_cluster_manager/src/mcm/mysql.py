@@ -284,15 +284,15 @@ class Mysql:
         Execute the given SQL statement.
         """
         try:
-
             if port is None:
-                unix_socket = '/var/run/mysqld/mysqld.sock'
-            else:
-                unix_socket = None
+                cnx = mysql.connector.connect(user=username, password=password,
+                                              database=database,
+                                              unix_socket='/var/run/mysqld/mysqld.sock')
 
-            cnx = mysql.connector.connect(user=username, password=password,
-                                          database=database, port=port,
-                                          unix_socket=unix_socket)
+            else:
+                cnx = mysql.connector.connect(user=username, password=password,
+                                              database=database, port=port)
+
             cursor = cnx.cursor()
 
             cursor.execute(sql)
