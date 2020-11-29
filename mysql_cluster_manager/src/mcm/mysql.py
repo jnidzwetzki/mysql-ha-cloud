@@ -51,11 +51,14 @@ class Mysql:
         logging.debug("Creating MySQL user for the application")
         application_user = os.environ.get("MYSQL_APPLICATION_USER")
         appication_password = os.environ.get("MYSQL_APPLICATION_PASSWORD")
+
+        # Password needs to be mysql_native_password for ProxySQL
+        # See https://github.com/sysown/proxysql/issues/2580
         Mysql.execute_statement_or_exit(f"CREATE USER '{application_user}'@'localhost' "
-                                        f"IDENTIFIED BY '{appication_password}'")
+                                        f"IDENTIFIED WITH mysql_native_password BY '{appication_password}'")
         Mysql.execute_statement_or_exit(f"GRANT ALL PRIVILEGES ON *.* TO '{application_user}'@'localhost'")
         Mysql.execute_statement_or_exit(f"CREATE USER '{application_user}'@'%' "
-                                        f"IDENTIFIED BY '{appication_password}'")
+                                        f"IDENTIFIED WITH mysql_native_password BY '{appication_password}'")
         Mysql.execute_statement_or_exit(f"GRANT ALL PRIVILEGES ON *.* TO '{application_user}'@'%'")
 
         # Create backup user

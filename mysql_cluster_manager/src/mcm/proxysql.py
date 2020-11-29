@@ -34,10 +34,16 @@ class Proxysql:
         Proxysql.perform_sql_query(f"UPDATE global_variables SET variable_value='{replication_password}' "
                                    "WHERE variable_name='mysql-monitor_password'")
 
-        # Configure read write hostgroup
+        # Configure read write hostgroup (writer = 1, reader = 2)
         Proxysql.perform_sql_query("DELETE FROM mysql_replication_hostgroups")
         Proxysql.perform_sql_query("INSERT INTO mysql_replication_hostgroups "
                                    "(writer_hostgroup, reader_hostgroup,comment) VALUES (1, 2, 'cluster1')")
+
+        # Configure read write split
+        Proxysql.perform_sql_query("INSERT INTO mysql_query_rules (active, match_digest, "
+                                   "destination_hostgroup, apply) VALUES (1, '^SELECT.*', 2, 0)")
+        Proxysql.perform_sql_query("INSERT INTO mysql_query_rules (active, match_digest, "
+                                   "destination_hostgroup, apply) VALUES (1, '^SELECT.*FOR UPDATE', 1, 1)")
 
         # Configure Application User
         application_user = os.environ.get("MYSQL_APPLICATION_USER")
@@ -58,10 +64,12 @@ class Proxysql:
         Proxysql.perform_sql_query("LOAD MYSQL VARIABLES TO RUNTIME")
         Proxysql.perform_sql_query("LOAD MYSQL SERVERS TO RUNTIME")
         Proxysql.perform_sql_query("LOAD MYSQL USERS TO RUNTIME")
+        Proxysql.perform_sql_query("LOAD MYSQL QUERY RULES TO RUNTIME")
 
         Proxysql.perform_sql_query("SAVE MYSQL VARIABLES TO DISK")
         Proxysql.perform_sql_query("SAVE MYSQL SERVERS TO DISK")
         Proxysql.perform_sql_query("SAVE MYSQL USERS TO DISK")
+        Proxysql.perform_sql_query("SAVE MYSQL QUERY RULES TO DISK")
 
     @staticmethod
     def set_mysql_server(mysql_servers):
@@ -86,7 +94,7 @@ class Proxysql:
         current_mysql_servers.sort()
 
         if self.configured_mysql_hosts != current_mysql_servers:
-            logging.info("MySQL Backend have changed (old=%s, new=%s), reconfiguring",
+            logging.info("MySQL backend has changed (old=%s, new=%s), reconfiguring",
                          self.configured_mysql_hosts, current_mysql_servers)
             Proxysql.set_mysql_server(current_mysql_servers)
             self.configured_mysql_hosts = current_mysql_servers
