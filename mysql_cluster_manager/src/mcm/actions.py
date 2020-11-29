@@ -88,11 +88,22 @@ class Actions:
         # Remove the old replication configuration (e.g., from backup)
         Mysql.delete_replication_config()
 
+        # Register service as leader or follower
+        Consul.get_instance().register_service(replication_leader)
+
+        # Run the main event loop
+        Actions.join_main_event_loop(consul_process, mysql_process)
+
+    @staticmethod
+    def join_main_event_loop(consul_process, mysql_process):
+        """
+        The main event loop for the join_or_bootstrap action
+        """
+
         last_backup_check = None
         last_session_refresh = None
         last_replication_leader_check = None
 
-        Consul.get_instance().register_service(replication_leader)
         proxysql = Proxysql()
 
         # Main Loop, heavy operations needs to be dispatched
