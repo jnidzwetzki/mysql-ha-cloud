@@ -250,7 +250,7 @@ ddcadd280a98.node.dc1.consul. 0	IN	TXT	"consul-network-segment="
 ;; MSG SIZE  rcvd: 260
 ```
 
-## Step 5 - Use the highly-available MySQL-Server
+### Step 5 - Use the highly-available MySQL-Server
 
 On port `3306/tcp` (the default MySQL port) on all Docker nodes, you can now reach the highly-available MySQL-Server. As user use `MYSQL_APPLICATION_USER` and the `MYSQL_APPLICATION_PASSWORD` from the docker-swarm file. 
 
