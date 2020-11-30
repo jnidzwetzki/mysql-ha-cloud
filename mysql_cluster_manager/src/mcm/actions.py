@@ -127,6 +127,7 @@ class Actions:
                 # can become the new leader?)
                 if not able_to_become_leader:
                     if Mysql.is_repliation_data_processed():
+                        logging.info("All replication data are read, node can become replication leader")
                         able_to_become_leader = True
 
                 replication_leader = Consul.get_instance().is_replication_leader()
