@@ -103,6 +103,7 @@ class Actions:
         last_backup_check = None
         last_session_refresh = None
         last_replication_leader_check = None
+        able_to_become_leader = False
 
         proxysql = Proxysql()
 
@@ -121,21 +122,33 @@ class Actions:
                 mysql_nodes = Consul.get_instance().get_all_registered_nodes()
                 proxysql.update_mysql_server_if_needed(mysql_nodes)
 
-                if not Consul.get_instance().is_replication_leader():
+                # Are the replication data completely processed
+                # (i.e., the data from the leader is stored locally and we
+                # can become the new leader?)
+                if not able_to_become_leader:
+                    if Mysql.is_repliation_data_processed():
+                        able_to_become_leader = True
+
+                replication_leader = Consul.get_instance().is_replication_leader()
+
+                # Try to become new leader
+                if not replication_leader and able_to_become_leader:
                     promotion = Consul.get_instance().try_to_become_replication_leader()
 
                     # Are we the new leader?
                     if promotion:
                         Mysql.delete_replication_config()
                         Consul.get_instance().register_service(True)
+                        replication_leader = True
 
-                    else:
-                        real_leader = Consul.get_instance().get_replication_leader_ip()
-                        configured_leader = Mysql.get_replication_leader_ip()
+                # Check for correct replication leader
+                if not replication_leader:
+                    real_leader = Consul.get_instance().get_replication_leader_ip()
+                    configured_leader = Mysql.get_replication_leader_ip()
 
-                        if real_leader != configured_leader:
-                            logging.info("Replication leader change (old=%s, new=%s)", configured_leader, real_leader)
-                            Mysql.change_to_replication_client(real_leader)
+                    if real_leader != configured_leader:
+                        logging.info("Replication leader change (old=%s, new=%s)", configured_leader, real_leader)
+                        Mysql.change_to_replication_client(real_leader)
 
             # Keep Consul sessions alive
             if Utils.is_refresh_needed(last_session_refresh, timedelta(seconds=5)):

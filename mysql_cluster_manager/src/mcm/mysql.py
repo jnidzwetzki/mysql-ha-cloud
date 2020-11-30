@@ -170,6 +170,35 @@ class Mysql:
         return slave_status[0]['Master_Host']
 
     @staticmethod
+    def is_repliation_data_processed():
+        """
+        Is the repliation log from the master completely processed
+        """
+
+        slave_status = Mysql.execute_query_as_root("SHOW SLAVE STATUS")
+
+        if len(slave_status) != 1:
+            return False
+
+        if not 'Slave_IO_State' in slave_status[0]:
+            logging.error("Invalid output, Slave_IO_State not found %s", slave_status)
+            return False
+
+        # Leader is sending data
+        if slave_status[0]['Slave_IO_State'] != "Waiting for master to send event":
+            return False
+
+        if not 'Slave_SQL_Running_State' in slave_status[0]:
+            logging.error("Invalid output, Slave_SQL_Running_State not found %s", slave_status)
+            return False
+
+        # Data is not completely proessed
+        if slave_status[0]['Slave_SQL_Running_State'] != "Slave has read all relay log; waiting for more updates":
+            return False
+
+        return True
+
+    @staticmethod
     def server_start(use_root_password=True):
         """
         Start the MySQL server and wait for ready to serve connections.
