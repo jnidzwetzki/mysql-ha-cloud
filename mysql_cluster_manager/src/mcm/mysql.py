@@ -1,6 +1,5 @@
 """This file is part of the MySQL cluster manager"""
 
-import io
 import os
 import sys
 import time
