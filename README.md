@@ -249,3 +249,15 @@ ddcadd280a98.node.dc1.consul. 0	IN	TXT	"consul-network-segment="
 ;; WHEN: Tue Nov 24 07:06:20 UTC 2020
 ;; MSG SIZE  rcvd: 260
 ```
+
+# Step 5 - Use the highly-available MySQL-Server
+
+On port `3306/tcp` (the default MySQL port) on all Docker nodes, you can now reach the highly-available MySQL-Server. As user use `MYSQL_APPLICATION_USER` and the `MYSQL_APPLICATION_PASSWORD` from the docker-swarm file. 
+
+For example: 
+
+```bash
+mysql -u mysql_user -pmysql_secret -h debian10-vm1
+```
+
+While you work on the MySQL-Shell you can restart the Docker nodes. Docker Swarm will restart the missing sevices on other nodes and the MySQL orchestrator will reconfigure the replication setup in MySQL. The MySQL-Shell is usable all the time for read- and write requests.
