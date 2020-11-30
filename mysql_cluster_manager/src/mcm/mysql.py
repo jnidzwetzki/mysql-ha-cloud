@@ -1,5 +1,6 @@
 """This file is part of the MySQL cluster manager"""
 
+import io
 import os
 import sys
 import time
@@ -185,7 +186,9 @@ class Mysql:
             return False
 
         # Leader is sending data
-        if slave_status[0]['Slave_IO_State'] != "Waiting for master to send event":
+        io_state = slave_status[0]['Slave_IO_State']
+        logging.debug("Follower IO state is '%s'", io_state)
+        if io_state != "Waiting for master to send event":
             return False
 
         if not 'Slave_SQL_Running_State' in slave_status[0]:
@@ -193,7 +196,9 @@ class Mysql:
             return False
 
         # Data is not completely proessed
-        if slave_status[0]['Slave_SQL_Running_State'] != "Slave has read all relay log; waiting for more updates":
+        sql_state = slave_status[0]['Slave_SQL_Running_State']
+        logging.debug("Follower SQL state is '%s'", sql_state)
+        if sql_state != "Slave has read all relay log; waiting for more updates":
             return False
 
         return True
