@@ -1,9 +1,9 @@
 # Example - Using Kubernetes
 
-To reproduce this example, you need a Kubernetes cluster with at lest three worker nodes. The following services are deployed to the cluster:
+To reproduce this example, you need a Kubernetes cluster with at least three worker nodes. The following services are deployed to the cluster:
 
-* Three Consul instances, they are used for election of the primary MySQL server, for service discovery, and for providing additional information about the state of the cluster.
-* One of the MinIO object storage to store MySQL backups. These backups are used to bootstrap new MySQL replicas automatically. MinIO needs at least to provide four nodes / volumes to provide highly available. Therefore, a persistent iSCSI volume is used in this example. On this volume, you can also store a MySQL backup that is used to bootstrap the cluster. However, the persistent volume is not nesseary. The solution works also without this volume. If the minio pod is started on another node, a new backup is created and uploaded automatically.
+* Three Consul instances, they are used for the election of the primary MySQL server, for service discovery, and for providing additional information about the state of the cluster.
+* One of the MinIO object storage to store MySQL backups. These backups are used to bootstrap new MySQL replicas automatically. MinIO needs at least to provide four nodes / volumes to provide highly available. Therefore, a persistent iSCSI volume is used in this example. On this volume, you can also store a MySQL backup that is used to bootstrap the cluster. However, the persistent volume is not necessary. The solution also works without this volume. If the MinIO pod is started on another node, a new backup is created and uploaded automatically.
 * One primary MySQL server (read/write) and two read-only MySQL replicas. 
 * An instance of [ProxySQL](https://github.com/sysown/proxysql) is available on every MySQL-Server. ProxySQL is used to access the MySQL installations. Write requests (e.g., `INSERT` or `UPDATE`) are automatically send to the replication leader, and read requests (e.g., `SELECT`) are sent to the replication follower.
 
