@@ -51,3 +51,7 @@ Of course, there are other projects that also focus on highly available MySQL sy
 ## Deployment and Usage Examples
 * Deploymnet using [Docker Swarm](docs/deployment-docker-swarm.md)
 * Deploymnet using [Kubernetes](docs/deployment-kubernetes.md)
+
+## What's next?
+* If you like the project, please star it on GitHub!
+* For more information see [https://github.com/jnidzwetzki](https://github.com/jnidzwetzki).
