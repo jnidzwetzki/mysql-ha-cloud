@@ -10,7 +10,7 @@
  </a>
 
 <br>
-This project provides a container image for a highly-available MySQL installation. 
+This project provides a container image for a highly-available MySQL installation that can be used in Kubernetes or Docker Swarm.
 <br>
 <br>
 
