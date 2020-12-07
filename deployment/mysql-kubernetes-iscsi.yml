@@ -56,7 +56,7 @@ spec:
       - name: iscsivol
         iscsi:
            targetPortal: 192.168.178.199
-           iqn: iqn.2020-12.block-storage:lun1
+           iqn: iqn.2020-12.block-storage
            lun: 1
            fsType: ext4
            readOnly: false
@@ -69,8 +69,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  # This name uniquely identifies the service
-  name: minio-service
+  name: minio
 spec:
   type: NodePort 
   ports:
@@ -87,7 +86,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  # This name uniquely identifies the service
   name: consul
   labels:
     app: consul
@@ -177,7 +175,7 @@ spec:
         - name: MINIO_SECRET_KEY
           value: minio123
         - name: MINIO_URL
-          value: http://minio-service:9000
+          value: http://minio:9000
         - name: MCM_BIND_INTERFACE
           value: eth0
         - name: MYSQL_ROOT_PASSWORD
@@ -195,3 +193,27 @@ spec:
         - name: MYSQL_APPLICATION_PASSWORD
           value: mysql_secret
 
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    app: mysql
+spec:
+  type: NodePort 
+  ports:
+    - port: 3306
+      targetPort: 3306
+      nodePort: 30015
+      protocol: TCP
+      name: mysql
+    - port: 6032
+      targetPort: 6032
+      nodePort: 30016
+      protocol: TCP
+      name: mysqlproxy
+  selector:
+    # Looks for labels `app:mysql` in the namespace and applies the spec
+    app: mysql
