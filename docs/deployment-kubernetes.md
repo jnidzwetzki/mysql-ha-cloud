@@ -26,11 +26,18 @@ In this example, the node `debian10-k8s-vm1` is the contol node for the cluster.
 
 ### Step 2 - Deploy the Services
 
-Please download the [configuration](https://raw.githubusercontent.com/jnidzwetzki/mysql-ha-cloud/main/deployment/mysql-kubernetes-iscsi.yml) for Kubernetes and adjust the configuration according to you local settings. For example, when you use the persistent iSCSI volume, the target needs to be adjusted. 
+Please download the [configuration](https://raw.githubusercontent.com/jnidzwetzki/mysql-ha-cloud/main/deployment/mysql-kubernetes-iscsi.yml) for Kubernetes and adjust the configuration according to you local settings. For example, when you use the persistent iSCSI volume, the iSCSI target settigs needs to be adjusted. 
 
 ```bash
 $ curl https://raw.githubusercontent.com/jnidzwetzki/mysql-ha-cloud/main/deployment/mysql-kubernetes-iscsi.yml --output mysql-kubernetes-iscsi.yml
 $ kubectl create -f mysql-kubernetes-iscsi.yml
+secret/chap-secret created
+deployment.apps/minio created
+service/minio created
+service/consul created
+statefulset.apps/consul created
+statefulset.apps/mysql created
+service/mysql created
 ```
 
 ### Step 3 - Check Deployment
