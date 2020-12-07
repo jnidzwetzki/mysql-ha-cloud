@@ -1,4 +1,4 @@
-# MySQL Highly-Available Cloud Container Orchestrator
+# MySQL-HA-Cloud - A Highly-Available Self-Hosted MySQL Cloud Container Orchestrator
 <a href="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud">
   <img alt="Build Status" src="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud.svg?branch=main">
 </a>
@@ -10,7 +10,7 @@
  </a>
 
 <br>
-This project provides a container image for a highly-available MySQL installation that can be used in Kubernetes or Docker Swarm.
+This project provides a container image for a highly-available MySQL installation that can be deployed to Kubernetes or Docker Swarm environments.
 <br>
 <br>
 
@@ -24,19 +24,21 @@ The provided container image contains a [MySQL 8.0 Server](https://dev.mysql.com
 
 Container Orchestrators like [Kubernetes](https://kubernetes.io/) or [Docker Swarm](https://docs.docker.com/get-started/swarm-deploy/) can be used to deploy the provided [container image](https://hub.docker.com/repository/docker/jnidzwetzki/mysql-ha-cloud).
 
-## What is the main focus of this project?
+The complete architecture is highly-available; failing and newly started containers are handled automatically. A new replication leader is automatically elected if the current leader fails. ProxySQL redirects database connections transparently to the nodes; the complete distribution and fail-over logic are hidden from the client applications. The solution is also horizontal scalable, new MySQL replication follower nodes can be added, and the query load is automatically distributed to these nodes. 
 
-This project will provide robust, tested, and easy to deploy containers for self-hosted MySQL cloud installations. The goal is that everybody can deploy highly-available and scalable MySQL installations and eliminate the DBMS as a single point of failure in his architecture.
+## What is The Main Focus of This Project?
 
-## Why do I need this?
+This project provides a robust, tested, and easy to deploy container image for self-hosted MySQL cloud installations. The goal is that everybody can deploy highly-available and scalable MySQL installations and eliminate the DBMS as a single point of failure in his architecture.
+
+## Why Do I Need MySQL-HA-Cloud?
 
 In today's software development, robust applications are often developed as stateless cloud-native containers. Such containers can be easily moved between hosts, automatically restarted on failures, and replicated to handle increasing workloads. On the other hand, data are stored in relational database systems (RDBMS), which are often running on bare-metal hardware. Relational databases are stateful applications that are hard to scale, and they are often a single point of failure; high availability (HA) is rarely implemented.
 
-## Are NoSQL databases a solution?
+## Are NoSQL Databases a Solution?
 
 NoSQL databases are mostly cloud-native applications; however, they leak of the support of a full flagged relational database. Features such as transactions, complex data models, or consistency are omitted to make these systems horizontal scalable and fault-tolerant. However, simple tasks that can easily be implemented by using a relational database (e.g., an increasing counter, secondary indexes, isolation of uncommitted data, or joins) can be hard to implement. Therefore, relational databases are still used by moderns applications. 
 
-## Are there other solutions?
+## Are There Other Solutions?
 
 Of course, there are other projects that also focus on highly available MySQL systems. For instance:
 
@@ -46,6 +48,6 @@ Of course, there are other projects that also focus on highly available MySQL sy
 * [Signal 18 replication manager](https://signal18.io/products/srm)
 * [Autopilot pattern for MySQL](https://github.com/autopilotpattern/mysql)
 
-## Examples
+## Deployment and Usage Examples
 * Deploymnet using [Docker Swarm](docs/deployment-docker-swarm.md)
 * Deploymnet using [Kubernetes](docs/deployment-kubernetes.md)
