@@ -20,6 +20,10 @@ This project provides a container image for a highly-available MySQL installatio
 ## Architecture
 <img src="docs/images/architecture.png" width="500">
 
+The provided container image contains a [MySQL 8.0 Server](https://dev.mysql.com/doc/relnotes/mysql/8.0/en/), [Consul](https://www.hashicorp.com/products/consul) for the service discovery, health checks of the nodes, and the MySQL replication leader election. [ProxySQL](https://proxysql.com/) provides the entry point for the client; the software forwards the connections of the client to the MySQL nodes. Write requests are send to the replication leader, and read requests are sent to the replication follower. In addition, [MinIO](https://min.io/) is used as backup storage and to bootstrap the replication follower. Backups are created by using [XtraBackup](https://www.percona.com/software/mysql-database/percona-xtrabackup) without creating table locks. 
+
+Container Orchestrators like [Kubernetes](https://kubernetes.io/) or [Docker Swarm](https://docs.docker.com/get-started/swarm-deploy/) can be used to deploy the provided container image.
+
 ## What is the main focus of this project?
 
 This project will provide robust, tested, and easy to deploy containers for self-hosted MySQL cloud installations. The goal is that everybody can deploy highly-available and scalable MySQL installations and eliminate the DBMS as a single point of failure in his architecture.
