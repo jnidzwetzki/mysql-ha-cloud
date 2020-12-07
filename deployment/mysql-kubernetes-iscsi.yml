@@ -97,7 +97,7 @@ spec:
       nodePort: 30014
       protocol: TCP
   selector:
-    # Looks for labels `app:minio` in the namespace and applies the spec
+    # Looks for labels `app:consul` in the namespace and applies the spec
     app: consul
 
 ---
