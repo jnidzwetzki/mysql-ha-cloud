@@ -15,7 +15,7 @@ This project provides a container image for a highly-available MySQL installatio
 <br>
 
 
-**Project state:** Working alpha version
+**Project state:** Beta version available
 
 ## Architecture
 <img src="docs/images/architecture.png" width="500">
