@@ -56,7 +56,7 @@ spec:
       - name: iscsivol
         iscsi:
            targetPortal: 192.168.178.199
-           iqn: iqn.2020-12.block-storage
+           iqn: iqn.2020-12.block-storage:lun1
            lun: 1
            fsType: ext4
            readOnly: false
