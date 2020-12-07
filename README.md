@@ -10,12 +10,19 @@
  </a>
 
 <br>
-This project provides containers and blueprints for robust, scalable, and highly-available MySQL installations. 
+This project provides a container image for a highly-available MySQL installation. 
 <br>
 <br>
 
 
 **Project state:** Working alpha version
+
+## Architecture
+<img src="docs/images/architecture.png" width="500">
+
+## What is the main focus of this project?
+
+This project will provide robust, tested, and easy to deploy containers for self-hosted MySQL cloud installations. The goal is that everybody can deploy highly-available and scalable MySQL installations and eliminate the DBMS as a single point of failure in his architecture.
 
 ## Why do I need this?
 
@@ -34,10 +41,6 @@ Of course, there are other projects that also focus on highly available MySQL sy
 * [MySQL InnoDB Cluster](https://dev.mysql.com/doc/refman/8.0/en/admin-api-userguide.html)
 * [Signal 18 replication manager](https://signal18.io/products/srm)
 * [Autopilot pattern for MySQL](https://github.com/autopilotpattern/mysql)
-
-## What is the main focus of this project?
-
-This project will provide robust, tested, and easy to deploy containers for self-hosted MySQL cloud installations. The goal is that everybody can deploy highly-available and scalable MySQL installations and eliminate the DBMS as a single point of failure in his architecture.
 
 ## Examples
 * Deploymnet using [Docker Swarm](docs/deployment-docker-swarm.md)
