@@ -110,7 +110,7 @@ In the output above can be seen that the deployment of the Consul servers was su
 
 ### Step 4 - Check Deployment
 
-After the deployment is done, you can check which MySQL nodes are avaialable and which node is the replocation leader:
+After the deployment is done, you can check which MySQL nodes are avaialable and which node is the replication leader:
 
 ```bash
 $ docker exec -t a856acfc1635 consul kv get -recurse mcm/instances
