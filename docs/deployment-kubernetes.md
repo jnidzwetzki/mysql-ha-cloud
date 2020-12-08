@@ -51,7 +51,7 @@ consul-2                 1/1     Running             0          2m41s
 minio-567b86887c-wlpdn   1/1     Running             0          3h49m
 mysql-0                  1/1     Running             0          3h49m
 mysql-1                  1/1     Running             0          88s
-mysql-2                  0/1     Running             0          13s
+mysql-2                  1/1     Running             0          13s
 ```
 
 In addition, the following services should be available:
