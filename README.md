@@ -47,6 +47,7 @@ Of course, there are other projects that also focus on highly available MySQL sy
 * [MySQL InnoDB Cluster](https://dev.mysql.com/doc/refman/8.0/en/admin-api-userguide.html)
 * [Signal 18 replication manager](https://signal18.io/products/srm)
 * [Autopilot pattern for MySQL](https://github.com/autopilotpattern/mysql)
+* [Percona Kubernetes Operator for Percona XtraDB Cluster](https://www.percona.com/doc/kubernetes-operator-for-pxc/index.html)
 
 ## Deployment and Usage Examples
 * Deploymnet using [Docker Swarm](docs/deployment-docker-swarm.md)
