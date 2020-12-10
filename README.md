@@ -54,5 +54,5 @@ Of course, there are other projects that also focus on highly available MySQL sy
 * Deploymnet using [Kubernetes](docs/deployment-kubernetes.md)
 
 ## What's next?
-* If you like the project, please star it on GitHub!
+* If you like the project, please give it a star on GitHub!
 * For more information see [https://github.com/jnidzwetzki](https://github.com/jnidzwetzki).
