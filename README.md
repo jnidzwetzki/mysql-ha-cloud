@@ -26,6 +26,15 @@ Container Orchestrators like [Kubernetes](https://kubernetes.io/) or [Docker Swa
 
 The complete architecture is highly-available; failing and newly started containers are handled automatically. A new replication leader is automatically elected if the current leader fails. ProxySQL redirects database connections transparently to the nodes; the complete distribution and fail-over logic are hidden from the client applications. The solution is also horizontal scalable, new MySQL replication follower nodes can be added, and the query load is automatically distributed to these nodes. 
 
+## Features
+
+* ✅ Automatic backups on S3 Buckets using Xtrabackup and MinIO
+* ✅ Automatic MySQL provisioning
+* ✅ Automatic fail-over and leader election
+* ✅ Transparent connection routing for read-/write-splits using ProxySQL
+* ✅ Hoizontal scalable
+* ✅ Compatible with Kubernetes and Docker Swarm
+
 ## What is The Main Focus of This Project?
 
 This project provides a robust, tested, and easy to deploy container image for self-hosted MySQL cloud installations. The goal is that everybody can deploy highly-available and scalable MySQL installations and eliminate the DBMS as a single point of failure in his architecture.
@@ -37,15 +46,6 @@ In today's software development, robust applications are often developed as stat
 ## Are NoSQL Databases a Solution?
 
 NoSQL databases are mostly cloud-native applications; however, they leak of the support of a full flagged relational database. Features such as transactions, complex data models, or consistency are omitted to make these systems horizontal scalable and fault-tolerant. However, simple tasks that can easily be implemented by using a relational database (e.g., an increasing counter, secondary indexes, isolation of uncommitted data, or joins) can be hard to implement. Therefore, relational databases are still used by moderns applications. 
-
-## Features
-
-* ✅ Automatic backups on S3 Buckets using Xtrabackup and MinIO
-* ✅ Automatic MySQL provisioning
-* ✅ Automatic fail-over and leader election
-* ✅ Transparent connection routing for read-/write-splits using ProxySQL
-* ✅ Hoizontal scalable
-* ✅ Compatible with Kubernetes and Docker Swarm
 
 ## Deployment and Usage Examples
 * Deploymnet using [Docker Swarm](docs/deployment-docker-swarm.md)
