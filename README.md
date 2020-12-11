@@ -29,10 +29,10 @@ The complete architecture is highly-available; failing and newly started contain
 ## Features
 
 * ✅ Automatic (non locking) backups on S3 Buckets using Xtrabackup and MinIO
-* ✅ Automatic MySQL provisioning
-* ✅ Automatic leader election
+* ✅ Automatic MySQL replication leader election
 * ✅ Automatic MySQL replication leader configuration and fail-over
 * ✅ Automatic MySQL replication follower configuration
+* ✅ Automatic MySQL provisioning
 * ✅ Transparent connection routing for read-/write-splits using ProxySQL
 * ✅ Horizontal scalable
 * ✅ Compatible with Kubernetes and Docker Swarm
