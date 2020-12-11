@@ -38,6 +38,19 @@ In today's software development, robust applications are often developed as stat
 
 NoSQL databases are mostly cloud-native applications; however, they leak of the support of a full flagged relational database. Features such as transactions, complex data models, or consistency are omitted to make these systems horizontal scalable and fault-tolerant. However, simple tasks that can easily be implemented by using a relational database (e.g., an increasing counter, secondary indexes, isolation of uncommitted data, or joins) can be hard to implement. Therefore, relational databases are still used by moderns applications. 
 
+## Features
+
+* ✅ Automatic backups on S3 Buckets using Xtrabackup and MinIO
+* ✅ Automatic MySQL provisioning
+* ✅ Automatic fail-over and leader election
+* ✅ Transparent connection routing for read-/write-splits using ProxySQL
+* ✅ Hoizontal scalable
+* ✅ Compatible with Kubernetes and Docker Swarm
+
+## Deployment and Usage Examples
+* Deploymnet using [Docker Swarm](docs/deployment-docker-swarm.md)
+* Deploymnet using [Kubernetes](docs/deployment-kubernetes.md)
+
 ## Are There Other Solutions?
 
 Of course, there are other projects that also focus on highly available MySQL systems. For instance:
@@ -48,10 +61,6 @@ Of course, there are other projects that also focus on highly available MySQL sy
 * [Signal 18 replication manager](https://signal18.io/products/srm)
 * [Autopilot pattern for MySQL](https://github.com/autopilotpattern/mysql)
 * [Percona Kubernetes Operator for Percona XtraDB Cluster](https://www.percona.com/doc/kubernetes-operator-for-pxc/index.html)
-
-## Deployment and Usage Examples
-* Deploymnet using [Docker Swarm](docs/deployment-docker-swarm.md)
-* Deploymnet using [Kubernetes](docs/deployment-kubernetes.md)
 
 ## What's next?
 * If you like the project, please give it a star on GitHub!
