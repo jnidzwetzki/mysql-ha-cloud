@@ -66,7 +66,7 @@ class Consul:
         """
         Start the session auto refresh thread
         """
-        logging.debug("Starting the Consul session auto refresh thread")
+        logging.info("Starting the Consul session auto refresh thread")
         self.run_auto_refresh_thread = True
         self.auto_refresh_thread = threading.Thread(target=self.auto_refresh_sessions, args=())
         self.auto_refresh_thread.start()
@@ -77,7 +77,7 @@ class Consul:
         """
         while self.run_auto_refresh_thread:
             logging.debug("Refreshing active consul sessions from auto refresh thread")
-            self.auto_refresh_sessions()
+            self.refresh_sessions()
             time.sleep(2)
 
     def stop_session_auto_refresh_thread(self):
