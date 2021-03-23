@@ -96,7 +96,7 @@ class Actions:
 
         # Session keep alive will be handled by the main event loop
         Consul.get_instance().stop_session_auto_refresh_thread()
-        
+
         # Run the main event loop
         Actions.join_main_event_loop(consul_process, mysql_process)
 
