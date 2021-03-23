@@ -69,7 +69,7 @@ class Consul:
         logging.debug("Starting the Consul session auto refresh thread")
         self.run_auto_refresh_thread = True
         self.auto_refresh_thread = threading.Thread(target=self.auto_refresh_sessions, args=())
-        self.auto_refresh_thread .start()
+        self.auto_refresh_thread.start()
 
     def auto_refresh_sessions(self):
         """
