@@ -45,6 +45,9 @@ class Actions:
         # Try to become session leader (needed to decide if we can create a database)
         replication_leader = Consul.get_instance().try_to_become_replication_leader()
 
+        # Keep session alive until we start the main loop
+        Consul.get_instance().start_session_auto_refresh_thread()
+
         logging.info("Init local node (leader=%s, backup=%s)",
                      replication_leader, backup_exists)
 
@@ -90,6 +93,9 @@ class Actions:
 
         # Register service as leader or follower
         Consul.get_instance().register_service(replication_leader)
+
+        # Session keep alive will be handled by the main event loop
+        Consul.get_instance().stop_session_auto_refresh_thread()
 
         # Run the main event loop
         Actions.join_main_event_loop(consul_process, mysql_process)

@@ -4,6 +4,7 @@ import os
 import time
 import json
 import logging
+import threading
 import subprocess
 
 import consul as pyconsul
@@ -50,12 +51,45 @@ class Consul:
         self.active_sessions = []
         self.node_health_session = self.create_node_health_session()
 
+        # The session auto refresh thread
+        self.auto_refresh_thread = None
+        self.run_auto_refresh_thread = False
+
     @staticmethod
     def get_instance():
         """ Static access method. """
         if Consul.__instance is None:
             Consul()
         return Consul.__instance
+
+    def start_session_auto_refresh_thread(self):
+        """
+        Start the session auto refresh thread
+        """
+        logging.debug("Starting the Consul session auto refresh thread")
+        self.run_auto_refresh_thread = True
+        self.auto_refresh_thread = threading.Thread(target=self.auto_refresh_sessions, args=())
+        self.auto_refresh_thread .start()
+
+    def auto_refresh_sessions(self):
+        """
+        Auto refresh the active sessions
+        """
+        while self.run_auto_refresh_thread:
+            logging.debug("Refreshing active consul sessions from auto refresh thread")
+            self.auto_refresh_sessions()
+            time.sleep(2)
+
+    def stop_session_auto_refresh_thread(self):
+        """
+        Stop the session auto refresh thread
+        """
+        logging.info("Stopping the Consul session auto refresh thread")
+        self.run_auto_refresh_thread = False
+        if self.auto_refresh_thread is not None:
+            self.auto_refresh_thread.join()
+            self.auto_refresh_thread = None
+        logging.info("Consul session auto refresh thread is stopped")
 
     def create_node_health_session(self):
         """
