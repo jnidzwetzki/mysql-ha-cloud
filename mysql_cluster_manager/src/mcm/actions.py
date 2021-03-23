@@ -94,6 +94,9 @@ class Actions:
         # Register service as leader or follower
         Consul.get_instance().register_service(replication_leader)
 
+        # Session keep alive will be handled by the main event loop
+        Consul.get_instance().stop_session_auto_refresh_thread()
+        
         # Run the main event loop
         Actions.join_main_event_loop(consul_process, mysql_process)
 
@@ -161,7 +164,9 @@ class Actions:
 
             # Create MySQL Backups (using extra thread for backup)
             if Utils.is_refresh_needed(last_backup_check, timedelta(minutes=5)):
+                Consul.get_instance().start_session_auto_refresh_thread()
                 Mysql.create_backup_if_needed()
                 last_backup_check = datetime.now()
+                Consul.get_instance().stop_session_auto_refresh_thread()
 
             time.sleep(1)
