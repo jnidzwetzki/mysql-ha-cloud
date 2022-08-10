@@ -28,6 +28,6 @@ jobs:
            docker login -u ${secrets.DOCKER_USER} -p ${secrets.DOCKER_PASSWORD} 
 
       - name: Push image
-        if: github.ref == 'refs/heads/master'
+        if: github.ref == 'refs/heads/main'
         run: |
            docker push jnidzwetzki/mysql-ha-cloud:latest

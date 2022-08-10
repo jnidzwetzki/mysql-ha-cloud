@@ -18,7 +18,7 @@ RUN \
     # \
     # Install GPG Key \
     # \
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 467B942D3A79BD29
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 467B942D3A79BD29 && \
     # \
     # Pin MySQL to 8.0.21 due to: https://jira.percona.com/browse/PXB-2315 \
     # \
