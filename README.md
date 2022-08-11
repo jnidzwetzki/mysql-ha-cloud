@@ -1,6 +1,6 @@
 # MySQL-HA-Cloud - A Highly-Available Self-Hosted MySQL Cloud Container Orchestrator
-<a href="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud">
-  <img alt="Build Status" src="https://travis-ci.org/jnidzwetzki/mysql-ha-cloud.svg?branch=main">
+<a href="https://github.com/jnidzwetzki/mysql-ha-cloud/actions/workflows/build.yml">
+  <img alt="Build Status" src="https://github.com/jnidzwetzki/mysql-ha-cloud/actions/workflows/build.yml/badge.svg">
 </a>
 <a href="http://makeapullrequest.com">
  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" />
